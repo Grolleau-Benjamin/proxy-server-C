@@ -24,6 +24,10 @@ int main() {
   int ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
   print_error(ret, "bind");
   INFO("Server is bind on %s:%d\n", ADDRESS, PORT);
+
+  ret = listen(listen_fd, MAX_CLIENT);
+  print_error(ret, "listen");
+  INFO("Server is now listening...\n");
   
   close(listen_fd);
   return 0;
