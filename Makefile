@@ -4,9 +4,9 @@ CFLAGS_DEBUG = -Wall -Wextra -Iincludes -DDEBUG -g
 
 SRCS = main.c src/utils.c
 
-RELEASE_OBJS = obj/main.o obj/utils.o
+RELEASE_OBJS = obj/main.o obj/utils.o obj/server.o
 
-DEBUG_OBJS = obj/main_debug.o obj/utils_debug.o
+DEBUG_OBJS = obj/main_debug.o obj/utils_debug.o obj/server_debug.o
 
 TARGET = proxy
 DEBUG_TARGET = proxy_debug
@@ -26,9 +26,13 @@ obj/main.o: main.c | obj
 	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
 obj/utils.o: src/utils.c | obj
 	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
+obj/server.o: src/server.c | obj
+	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
 obj/main_debug.o: main.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj/utils_debug.o: src/utils.c | obj
+	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
+obj/server_debug.o: src/server.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj:
 	mkdir -p obj
