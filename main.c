@@ -72,15 +72,10 @@ int main() {
         if (close_conn) {
           INFO("Closing connection for fd %d\n", fds[i].fd);
           close(fds[i].fd);
+          fds[i].fd = -1;
+          fds[i].revents = 0;
           free(connections[i]);
           connections[i] = NULL;
-          // If the connection is not the last in the list, replace it with the last one
-          // to maintain a contiguous list and avoid gaps        fds[i].fd = -1;
-          if (i < nfds - 1) {
-            fds[i] = fds[nfds - 1];
-            connections[i] = connections[nfds - 1];
-            connections[nfds - 1] = NULL;
-          }
           nfds --;
           INFO("Connection closed!\n");
         }
