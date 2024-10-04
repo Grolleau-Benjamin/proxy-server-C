@@ -1,5 +1,6 @@
 #include "../includes/server.h"
 #include "../includes/utils.h"
+#include <unistd.h>
 
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
@@ -29,4 +30,24 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr) {
   print_error(new_client_fd, "accept");
   INFO("New connection accepted: fd %d\n", new_client_fd);
   return new_client_fd;
+}
+
+int handle_connection(connection_t* conn) {
+  INFO("Handle connection function\n");
+
+  char buffer[BUFFER_SIZE];
+  ssize_t bytes_read = read(conn->client_fd, buffer, sizeof(buffer));
+
+  if (bytes_read < 0) {
+    print_error(bytes_read, "read");
+    return 1;
+  }
+
+  if (bytes_read == 0) {
+    INFO("Client closed the connection.\n");
+    return 1;
+  }
+
+  INFO("Text read: %.*s\n", (int)bytes_read, buffer);
+  return 0;
 }

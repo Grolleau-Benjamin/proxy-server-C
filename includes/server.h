@@ -24,5 +24,6 @@ typedef struct {
 
 int init_listen_socket(const char* address, int port, int max_client);
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr);
+int handle_connection(connection_t* conn);
 
 #endif

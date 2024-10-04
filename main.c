@@ -6,6 +6,10 @@
 #define MAX_CLIENT 10
 
 int main() {
+  INFO("Test info\n");     // TODO: Delete
+  WARN("Test warn\n");     // TODO: Delete
+  ERROR("Test error\n");   // TODO: Delete
+  
   int listen_fd;
   struct sockaddr_in client_addr;
 
@@ -35,7 +39,7 @@ int main() {
       // Refer to: man poll
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)){
         if (i != 0) { // not the listening socket
-          WARN("Error on socket %d, closing the connection\n", fds[i].fd);
+          ERROR("Error on socket %d, closing the connection\n", fds[i].fd);
           close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) close(connections[i]->client_fd);
@@ -63,22 +67,23 @@ int main() {
 
         nfds++;
       } else {
+        int close_conn = handle_connection(connections[i]);
         
-        // TODO: Handle connection 
-        
-        INFO("Closing connection for fd %d\n", fds[i].fd);
-        close(fds[i].fd);
-        free(connections[i]);
-        connections[i] = NULL;
-        // If the connection is not the last in the list, replace it with the last one
-        // to maintain a contiguous list and avoid gaps        fds[i].fd = -1;
-        if (i < nfds - 1) {
-          fds[i] = fds[nfds - 1];
-          connections[i] = connections[nfds - 1];
-          connections[nfds - 1] = NULL;
+        if (close_conn) {
+          INFO("Closing connection for fd %d\n", fds[i].fd);
+          close(fds[i].fd);
+          free(connections[i]);
+          connections[i] = NULL;
+          // If the connection is not the last in the list, replace it with the last one
+          // to maintain a contiguous list and avoid gaps        fds[i].fd = -1;
+          if (i < nfds - 1) {
+            fds[i] = fds[nfds - 1];
+            connections[i] = connections[nfds - 1];
+            connections[nfds - 1] = NULL;
+          }
+          nfds --;
+          INFO("Connection closed!\n");
         }
-        nfds --;
-        INFO("Connection closed!\n");
       }
     }
 
