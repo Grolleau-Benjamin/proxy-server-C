@@ -24,12 +24,9 @@ typedef struct {
 
 int is_http_method(const char* buffer);
 int is_http_request_complete(const char* buffer);
-int is_ftp_command(const char *buffer);
-int is_ftp_command_complete(const char* buffer);
 int init_listen_socket(const char* address, int port, int max_client);
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr);
 int handle_connection(connection_t* conn);
-void handle_ftp(connection_t* conn);
 void handle_http(connection_t* conn);
 
 #endif

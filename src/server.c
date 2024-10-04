@@ -1,13 +1,8 @@
 #include "../includes/server.h"
 #include "../includes/utils.h"
-#include <sys/types.h>
 
 const char* http_methods[] = {
   "GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
-};
-
-const char* ftp_commands[] = {
-  "USER", "PASS", "ACCT", "CWD", "QUIT", "REIN", "PORT", "PASV", "TYPE", "MODE", "STRU", "RETR", "STOR"
 };
 
 int is_http_method(const char* buffer) {
@@ -25,23 +20,6 @@ int is_http_request_complete(const char* buffer) {
     return 1;
   }
   return 0;
-}
-
-int is_ftp_command(const char *buffer) {
-  for (size_t i = 0; i < sizeof(ftp_commands) / sizeof(ftp_commands[0]); i++) {
-    if (strncmp(buffer, ftp_commands[i], strlen(ftp_commands[i])) == 0) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int is_ftp_command_complete(const char *buffer) {
-  const char *end_of_command = "\r\n";
-  if (strstr(buffer, end_of_command) != NULL) {
-    return 1; 
-  }
-  return 0; 
 }
 
 int init_listen_socket(const char* address, int port, int max_client) {
@@ -102,13 +80,10 @@ int handle_connection(connection_t* conn) {
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       handle_http(conn);
       return 0;
-    } else if (is_ftp_command(conn->client_buffer) && is_ftp_command_complete(conn->client_buffer)) {
-      handle_ftp(conn);
-      return 0;
     }
 
     if (total_bytes_read == BUFFER_SIZE) {
-      if (!(is_ftp_command(conn->client_buffer) || is_http_method(conn->client_buffer))) {
+      if (!is_http_method(conn->client_buffer)) {
         WARN("Unknown protocol.\n");
       } else {
         WARN("Request too large to handle.\n");
@@ -117,11 +92,6 @@ int handle_connection(connection_t* conn) {
     }
   }
   return 0;
-}
-
-void handle_ftp(connection_t* conn) {
-  INFO("Handle FTP function\n");  
-  INFO("Command: %.*s\n", (int)conn->client_buffer_len, conn->client_buffer);
 }
 
 void handle_http(connection_t* conn) {
