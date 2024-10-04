@@ -1,5 +1,6 @@
 # binary
 proxy
+proxy_debug
 
 # objects
 obj/**
