@@ -29,7 +29,7 @@ int is_ftp_command_complete(const char* buffer);
 int init_listen_socket(const char* address, int port, int max_client);
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr);
 int handle_connection(connection_t* conn);
-void handle_ftp(connection_t* conn, const char* buffer, ssize_t buffer_len);
-void handle_http(connection_t* conn, const char* buffer, ssize_t buffer_len);
+void handle_ftp(connection_t* conn);
+void handle_http(connection_t* conn);
 
 #endif

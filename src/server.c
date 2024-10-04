@@ -77,11 +77,11 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr) {
 int handle_connection(connection_t* conn) {
   INFO("Handle connection function\n");
 
-  char buffer[BUFFER_SIZE];
   ssize_t total_bytes_read = 0;
+  conn->client_buffer_len = 0;
 
   while(1) {
-    ssize_t bytes_read = read(conn->client_fd, buffer + total_bytes_read, sizeof(buffer) - total_bytes_read);
+    ssize_t bytes_read = read(conn->client_fd, conn->client_buffer + total_bytes_read, sizeof(conn->client_buffer) - total_bytes_read);
 
     if (bytes_read < 0) {
       print_error(bytes_read, "read");
@@ -94,17 +94,21 @@ int handle_connection(connection_t* conn) {
     }
 
     total_bytes_read += bytes_read;
+    conn->client_buffer_len = total_bytes_read;
     
-    if (is_http_method(buffer) && is_http_request_complete(buffer)) {
-      handle_http(conn, buffer, total_bytes_read);
+    INFO("is_http_method(conn->client_buffer) : %d\n", is_http_method(conn->client_buffer));
+    INFO("is_http_request_complete(conn->client_buffer) : %d\n", is_http_request_complete(conn->client_buffer));
+
+    if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
+      handle_http(conn);
       break;
-    } else if (is_ftp_command(buffer) && is_ftp_command_complete(buffer)) {
-      handle_ftp(conn, buffer, total_bytes_read);
+    } else if (is_ftp_command(conn->client_buffer) && is_ftp_command_complete(conn->client_buffer)) {
+      handle_ftp(conn);
       break;
     }
 
     if (total_bytes_read == BUFFER_SIZE) {
-      if (!(is_ftp_command(buffer) || is_http_method(buffer))) {
+      if (!(is_ftp_command(conn->client_buffer) || is_http_method(conn->client_buffer))) {
         WARN("Unknown protocol.\n");
       } else {
         WARN("Request too large to handle.\n");
@@ -115,12 +119,12 @@ int handle_connection(connection_t* conn) {
   return 0;
 }
 
-void handle_ftp(connection_t* conn, const char* buffer, ssize_t buffer_len) {
+void handle_ftp(connection_t* conn) {
   INFO("Handle FTP function\n");  
-  INFO("Command: %.*s\n", (int)buffer_len, buffer);
+  INFO("Command: %.*s\n", (int)conn->client_buffer_len, conn->client_buffer);
 }
 
-void handle_http(connection_t* conn, const char* buffer, ssize_t buffer_len) {
+void handle_http(connection_t* conn) {
   INFO("Handle HTTP function\n");
-  INFO("Request: %.*s\n", (int)buffer_len, buffer);
+  INFO("Request: %.*s\n", (int)conn->client_buffer_len, conn->client_buffer);
 }
