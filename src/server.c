@@ -101,10 +101,10 @@ int handle_connection(connection_t* conn) {
 
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       handle_http(conn);
-      break;
+      return 0;
     } else if (is_ftp_command(conn->client_buffer) && is_ftp_command_complete(conn->client_buffer)) {
       handle_ftp(conn);
-      break;
+      return 0;
     }
 
     if (total_bytes_read == BUFFER_SIZE) {
