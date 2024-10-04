@@ -2,11 +2,11 @@ CC = gcc
 CFLAGS_RELEASE = -Wall -Wextra -Iincludes
 CFLAGS_DEBUG = -Wall -Wextra -Iincludes -DDEBUG -g
 
-SRCS = main.c src/utils.c
+SRCS = main.c src/utils.c src/server.c src/http_helper.c
 
-RELEASE_OBJS = obj/main.o obj/utils.o obj/server.o
+RELEASE_OBJS = obj/main.o obj/utils.o obj/server.o obj/http_helper.o
 
-DEBUG_OBJS = obj/main_debug.o obj/utils_debug.o obj/server_debug.o
+DEBUG_OBJS = obj/main_debug.o obj/utils_debug.o obj/server_debug.o obj/http_helper_debug.o
 
 TARGET = proxy
 DEBUG_TARGET = proxy_debug
@@ -28,11 +28,15 @@ obj/utils.o: src/utils.c | obj
 	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
 obj/server.o: src/server.c | obj
 	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
+obj/http_helper.o: src/http_helper.c | obj
+	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
 obj/main_debug.o: main.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj/utils_debug.o: src/utils.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj/server_debug.o: src/server.c | obj
+	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
+obj/http_helper_debug.o: src/http_helper.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj:
 	mkdir -p obj

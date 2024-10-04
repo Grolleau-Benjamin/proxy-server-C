@@ -1,26 +1,8 @@
 #include "../includes/server.h"
 #include "../includes/utils.h"
-
-const char* http_methods[] = {
-  "GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
-};
-
-int is_http_method(const char* buffer) {
-  for(size_t i = 0; i < sizeof(http_methods) / sizeof(http_methods[0]); i++) {
-    if (strncmp(buffer, http_methods[i], strlen(http_methods[i])) == 0) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int is_http_request_complete(const char* buffer) {
-  const char* end_of_headers = "\r\n\r\n";
-  if (strstr(buffer, end_of_headers) != NULL) {
-    return 1;
-  }
-  return 0;
-}
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
@@ -74,11 +56,11 @@ int handle_connection(connection_t* conn) {
     total_bytes_read += bytes_read;
     conn->client_buffer_len = total_bytes_read;
     
-    INFO("is_http_method(conn->client_buffer) : %d\n", is_http_method(conn->client_buffer));
-    INFO("is_http_request_complete(conn->client_buffer) : %d\n", is_http_request_complete(conn->client_buffer));
-
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       handle_http(conn);
+      memset(conn->client_buffer, 0, sizeof(conn->client_buffer));
+      conn->client_buffer_len = 0;
+      total_bytes_read = 0;
       return 0;
     }
 
@@ -96,5 +78,12 @@ int handle_connection(connection_t* conn) {
 
 void handle_http(connection_t* conn) {
   INFO("Handle HTTP function\n");
-  INFO("Request: %.*s\n", (int)conn->client_buffer_len, conn->client_buffer);
+  
+  char host[256] = {0};
+  if (get_http_host(conn->client_buffer, host, sizeof(host)) == 0) {
+    INFO("Host: %s\n", host);
+  } else {
+    WARN("Failed to retrieve the host.\n");
+  }
+  // TODO: Host and buffer filter
 }

@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <poll.h>
 
+#include "http_helper.h"
+
 #define BUFFER_SIZE 4096
 
 typedef struct {
@@ -22,8 +24,6 @@ typedef struct {
   ssize_t server_buffer_len;
 } connection_t;
 
-int is_http_method(const char* buffer);
-int is_http_request_complete(const char* buffer);
 int init_listen_socket(const char* address, int port, int max_client);
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr);
 int handle_connection(connection_t* conn);
