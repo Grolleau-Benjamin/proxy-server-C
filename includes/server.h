@@ -22,11 +22,13 @@ typedef struct {
   char server_buffer[BUFFER_SIZE];
   ssize_t client_buffer_len;
   ssize_t server_buffer_len;
+  char client_ip[INET_ADDRSTRLEN];
+  char server_ip[INET_ADDRSTRLEN];
 } connection_t;
 
 int init_listen_socket(const char* address, int port, int max_client);
-int accept_connection(int listen_fd, struct sockaddr_in* client_addr);
+int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip);
 int handle_connection(connection_t* conn);
-void handle_http(connection_t* conn);
+int handle_http(connection_t* conn);
 
 #endif

@@ -14,11 +14,7 @@ int is_http_method(const char* buffer) {
 }
 
 int is_http_request_complete(const char* buffer) {
-  const char* end_of_headers = "\r\n\r\n";
-  if (strstr(buffer, end_of_headers) != NULL) {
-    return 1;
-  }
-  return 0;
+  return (strstr(buffer, "\r\n\r\n") != NULL);
 }
 
 int get_http_host(const char* buffer, char* host, size_t host_size) { 
@@ -37,7 +33,6 @@ int get_http_host(const char* buffer, char* host, size_t host_size) {
       if (host_length < host_size) {
         strncpy(host, host_header, host_length);
         host[host_length] = '\0';
-        INFO("Host: %s\n", host);
         return 0;
       } else {
         WARN("Host name too long\n");

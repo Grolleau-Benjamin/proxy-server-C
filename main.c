@@ -1,14 +1,25 @@
 #include "includes/utils.h"
 #include "includes/server.h"
+#include "includes/logger.h"
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
 
 #define PORT 8080
 #define ADDRESS "127.0.0.1"
 #define MAX_CLIENT 10
+#define LOGGER_FILENAME "proxy.log"
 
 int main() {
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
+
+  if (init_logger(LOGGER_FILENAME) != 0) {
+    return EXIT_FAILURE;
+  } else {
+    Log(LOG_LEVEL_INFO, "Application started!");
+  }
   
   int listen_fd;
   struct sockaddr_in client_addr;
@@ -54,16 +65,24 @@ int main() {
 
       // Action on the listenning socket => new connection
       if (fds[i].fd == listen_fd) {
-        int new_client_fd = accept_connection(listen_fd, &client_addr);
+        char client_ip[INET_ADDRSTRLEN];
+        int new_client_fd = accept_connection(listen_fd, &client_addr, client_ip);
         
         fds[nfds].fd = new_client_fd;
         fds[nfds].events = POLLIN;
 
         connections[nfds] = malloc(sizeof(connection_t));
+        if (connections[nfds] == NULL) {
+          perror("malloc");
+          close(new_client_fd);
+        }
+        
         connections[nfds]->client_fd = new_client_fd;
         connections[nfds]->server_fd = -1;
         connections[nfds]->client_buffer_len = 0;
         connections[nfds]->server_buffer_len = 0;
+        strcpy(connections[nfds]->client_ip, client_ip);
+        memset(connections[nfds]->server_ip, 0, sizeof(connections[nfds]->server_ip));
 
         nfds++;
       } else {
@@ -96,5 +115,6 @@ int main() {
   }
   
   close(listen_fd);
-  return 0;
+  close_logger();
+  return EXIT_SUCCESS;
 }
