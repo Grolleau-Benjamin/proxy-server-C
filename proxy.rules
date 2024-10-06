@@ -1,0 +1,19 @@
+[gambling]
+domains: 
+- http://gamblingsite1.com
+- http://gamblingsite2.com
+words: 
+- bet
+- casino
+
+[scam]
+domains:
+- http://scamsite1.com
+- http://scamsite2.com
+words:
+
+[others]
+domains:
+- http://darkwebsite.com
+words: 
+- darkweb

@@ -1,33 +1,46 @@
+#include "includes/config.h"
 #include "includes/utils.h"
 #include "includes/server.h"
 #include "includes/logger.h"
+#include "includes/rules.h"
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 
-#define PORT 8080
-#define ADDRESS "127.0.0.1"
-#define MAX_CLIENT 10
-#define LOGGER_FILENAME "proxy.log"
+#define CONFIG_FILENAME "proxy.config"
 
 int main() {
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
 
-  if (init_logger(LOGGER_FILENAME) != 0) {
+  if (init_config(CONFIG_FILENAME) != 0) {
     return EXIT_FAILURE;
   } else {
-    Log(LOG_LEVEL_INFO, "Application started!");
+    INFO("Config have been load correctly!\n");
   }
+  
+  if (init_logger(config.logger_filename) != 0) {
+    return EXIT_FAILURE;
+  } else {
+    Log(LOG_LEVEL_INFO, "Logger have been correctly initialized!");
+  }
+
+  if (init_rules(config.rules_filename) != 0) {
+    return EXIT_FAILURE;
+  } else {
+    Log(LOG_LEVEL_INFO, "Rules have been set.");
+  }
+
+  Log(LOG_LEVEL_INFO, "Application start.");
   
   int listen_fd;
   struct sockaddr_in client_addr;
 
-  listen_fd = init_listen_socket(ADDRESS, PORT, MAX_CLIENT);
+  listen_fd = init_listen_socket(config.address, config.port, config.max_client);
 
-  struct pollfd fds[MAX_CLIENT + 1];
-  connection_t *connections[MAX_CLIENT + 1];
+  struct pollfd fds[config.max_client + 1];
+  connection_t *connections[config.max_client + 1];
   memset(fds, 0, sizeof(fds));
   memset(connections, 0, sizeof(connections));
   fds[0].fd = listen_fd;
