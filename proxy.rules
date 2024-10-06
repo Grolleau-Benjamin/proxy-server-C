@@ -1,19 +1,13 @@
 [gambling]
-domains: 
-- http://gamblingsite1.com
-- http://gamblingsite2.com
-words: 
-- bet
-- casino
+BAN_DOMAIN http://gamblingsite1.com
+BAN_DOMAIN http://gamblingsite2.com
+BAN_WORD bet
+BAN_WORD casino
 
 [scam]
-domains:
-- http://scamsite1.com
-- http://scamsite2.com
-words:
+BAN_DOMAIN http://scamsite1.com
+BAN_DOMAIN http://scamsite2.com
 
 [others]
-domains:
-- http://darkwebsite.com
-words: 
-- darkweb
+BAN_DOMAIN http://darkwebsite.com
+BAN_WORD darkweb
