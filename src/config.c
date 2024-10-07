@@ -27,7 +27,7 @@ config_t config = {
 int init_config(const char* filename){
   INFO("Loading config from %s\n", filename);
 
-  FILE *file = fopen(filename, "r");
+  FILE* file = fopen(filename, "r");
   if (!file) {
     print_error(-1, "Config file not found");
     return -1;

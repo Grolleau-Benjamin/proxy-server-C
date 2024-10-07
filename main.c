@@ -143,5 +143,6 @@ int main() {
   
   close(listen_fd);
   close_logger();
+  free_rules();
   return EXIT_SUCCESS;
 }
