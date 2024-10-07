@@ -30,6 +30,8 @@ typedef struct {
   size_t nb_rules;
 } rules_t;
 
+extern rules_t rules;
+
 int init_rules(const char* filename);
 void free_rules();
 

@@ -19,7 +19,7 @@ TEST_SRCS = test/test_http_helper.c test/test_server.c
 TEST_OBJS = $(TEST_SRCS:test/test_%.c=obj/test_%.o)
 TEST_TARGETS = $(TEST_SRCS:test/%.c=test/%)
 
-.PHONY: all debug clean test
+.PHONY: all debug clean test docs
 
 all: $(TARGET)
 debug: $(DEBUG_TARGET)
@@ -48,6 +48,13 @@ obj:
 
 clean:
 	rm -f obj/*.o obj/*_debug.o $(TARGET) $(DEBUG_TARGET) $(TEST_TARGETS)
+	rm -rf docs
+	echo > proxy.log
+
+docs:
+	mkdir -p docs
+	rm -rf docs/*
+	doxygen
 
 $(TEST_TARGETS): test/%: obj/%.o $(OBJS_TEST)
 	$(CC) $(CFLAGS_DEBUG) -o $@ $^
