@@ -80,6 +80,11 @@ make debug
 
 This compile the source files and generate an executable `proxy`or `proxy_debug` , depending on the command.
 
+Finally, run `make test` to run all test and look if the programme is working as expected.
+```bash
+make test
+```
+
 4. **Clean build (Optionnal)**
 
 To clean up objects and executables: 

@@ -28,7 +28,34 @@ int is_http_method(const char* buffer) {
 }
 
 int is_http_request_complete(const char* buffer) {
-  return (strstr(buffer, "\r\n\r\n") != NULL);
+    if (!buffer) return 0;
+    
+    if (strstr(buffer, "\r\n\r\n") == NULL) return 0;
+    
+    const char* first_line_end = strstr(buffer, "\r\n");
+    if (!first_line_end) return 0;
+    
+    size_t first_line_length = first_line_end - buffer;
+    if (first_line_length >= 256) return 0;
+    
+    char first_line[256];
+    strncpy(first_line, buffer, first_line_length);
+    first_line[first_line_length] = '\0';
+    for (size_t i = 0; i < sizeof(http_methods) / sizeof(http_methods[0]); i++) {
+        size_t method_len = strlen(http_methods[i]);
+        if (strncmp(first_line, http_methods[i], method_len) == 0) {
+            const char* path_start = first_line + method_len;
+            if (*path_start == ' ') {
+                const char* version_start = strstr(path_start + 1, "HTTP/1.1");
+                if (version_start && strcmp(version_start, "HTTP/1.1") == 0) {
+                    if (strstr(buffer, "Host: ") != NULL) {
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 int get_http_host(const char* buffer, char* host, size_t host_size) { 
