@@ -159,8 +159,36 @@ int handle_http(connection_t* conn) {
     int sockfd = -1;
     struct addrinfo *res = NULL;
 
-    if(replace_localhost_with_ip(host)) {
-        INFO("Localhost have been handle, new request: %s", conn->client_buffer);
+    // handle the case where client ask for GET http://localhost:port/item HTTP/1.1
+    // serveur return 404 NOT FOUND, so we have to change the request to : GET /item HTTP/1.1
+    if (replace_localhost_with_ip(host)) {
+        char* get_pos = strstr(conn->client_buffer, "GET http://localhost");
+        if (get_pos) {
+            char* path_start = strchr(get_pos, '/');  // Find the first /
+            if (path_start) {
+                path_start = strchr(path_start + 2, '/');  // go to the last /
+                if (path_start) {
+                    char* http_version = strstr(path_start, " HTTP/1.1"); // got to the end (start of HTTP version protocol)
+                    if (http_version) {
+                        char new_line[1024];
+                        snprintf(new_line, sizeof(new_line), "GET %.*s HTTP/1.1\r\n", (int)(http_version - path_start), path_start); // write the new line;
+
+                        // find fisrt end of line
+                        char* end_of_line = strstr(conn->client_buffer, "\r\n");
+                        if (end_of_line) {
+                            memmove(get_pos, new_line, strlen(new_line)); // replace the line by new line
+
+                            // adjust the rest of the buffer
+                            // get_pos + strlen(new_line) => end of the line
+                            // end_of_line + 2 => for the \r\n
+                            // strlen(end_of_line + 2) +1 => to copy the rest of the buffer + 1 (\0)
+                            memmove(get_pos + strlen(new_line), end_of_line + 2, strlen(end_of_line + 2) + 1);
+                        }
+                    }
+                }
+            }
+        }
+        INFO("Localhost case handled\n");
     }
 
     // Si le format IP:Port est valide, on se connecte directement
