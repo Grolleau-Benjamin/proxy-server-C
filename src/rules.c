@@ -95,4 +95,6 @@ void free_rules() {
     free(cat->ban_word_list);
   }
   free(rules.rules);
+  rules.rules = NULL;
+  rules.nb_rules = 0;
 }

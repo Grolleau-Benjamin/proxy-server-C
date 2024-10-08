@@ -15,7 +15,7 @@ OBJS_TEST = $(DEBUG_SRCS:src/%.c=obj/%.o)
 TARGET = proxy
 DEBUG_TARGET = proxy_debug
 
-TEST_SRCS = test/test_http_helper.c test/test_server.c test/test_logger.c test/test_config.c
+TEST_SRCS = test/test_http_helper.c test/test_server.c test/test_logger.c test/test_config.c test/test_rules.c
 TEST_OBJS = $(TEST_SRCS:test/test_%.c=obj/test_%.o)
 TEST_TARGETS = $(TEST_SRCS:test/%.c=test/%)
 
