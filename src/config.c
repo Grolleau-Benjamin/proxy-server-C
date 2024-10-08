@@ -27,8 +27,8 @@ config_t config = {
   .port = 8080,
   .address = "127.0.0.1", 
   .max_client = 10,
-  .logger_filename = "proxy.log",
-  .rules_filename = "proxy.rules"
+  .logger_filename = "logs/proxy.log",
+  .rules_filename = "conf/proxy.rules"
 };
 
 /**

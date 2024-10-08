@@ -6,7 +6,7 @@ test/test_http_helper
 test/test_server
 
 # log
-proxy.log
+logs/proxy.log
 
 # objects
 obj/**
