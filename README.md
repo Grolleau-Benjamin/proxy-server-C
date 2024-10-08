@@ -25,9 +25,11 @@ This project is a simple HTTP proxy server written in C. It intercepts HTTP requ
 ├── main.c                   // The main entry point of the proxy 
 ├── Makefile                 // Instructions for building the project
 ├── obj/                     // Directory where object files are stored after compilation
-├── proxy.config             // Configuration file for the proxy server
-├── proxy.log                // Log file where activities are recorded
-├── proxy.rules              // Rules file defining filtering criteria
+├── conf/                    // Directory where config file are stored
+│   ├── proxy.config         // Configuration file for the proxy server
+│   └── proxy.rules          // Rules file defining filtering criteria
+├── logs/
+│   └──proxy.log             // Log file where activities are recorded
 ├── README.md
 ├── src                      // Source files implementing the functionality
 │   ├── config.c
@@ -36,8 +38,12 @@ This project is a simple HTTP proxy server written in C. It intercepts HTTP requ
 │   ├── rules.c
 │   ├── server.c
 │   └── utils.c
-├── test/                    // Directory where test source files are
-└── docs/                    // Directory where the documentation will be generated
+├── Doxyfile                 // Configuration file for doxygen
+├── Doxygen.md               // Main page for doxygen doc generation
+├── docs/html/index.html     // Entry point of the documentation
+└── test/                    // Directory where test source files are
+    ├── test_http_helper.c
+    └── test_server.c
 ```
 
 ## Installation
