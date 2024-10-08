@@ -1,3 +1,5 @@
+# rules for proxy
+
 [gambling]
 BAN_DOMAIN http://gamblingsite1.com
 BAN_DOMAIN http://gamblingsite2.com

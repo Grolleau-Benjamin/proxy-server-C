@@ -12,6 +12,14 @@
  * See the LICENSE file for the full license text.
  */
 
+/**
+ * @file logger.c
+ * @brief Implementation of the logger utility for the proxy server.
+ * 
+ * This file provides the implementation for logging messages to a log file with different log levels
+ * (INFO, WARN, ERROR), as well as initializing and closing the logger.
+ */
+
 #include "../includes/logger.h"
 #include "../includes/utils.h"
 
@@ -22,6 +30,16 @@
 
 static FILE* log_file = NULL;
 
+/**
+ * @brief Initializes the logger with the specified file.
+ * 
+ * This function opens a log file for appending log messages. It should be called
+ * at the start of the application to initialize the logging system.
+ * 
+ * @param filename The path to the log file.
+ * 
+ * @return 0 on success, -1 if the file could not be opened.
+ */
 int init_logger(const char* filename) {
   log_file = fopen(filename, "a");
   if (log_file == NULL) {
@@ -33,6 +51,12 @@ int init_logger(const char* filename) {
   return 0;
 }
 
+/**
+ * @brief Closes the logger.
+ * 
+ * This function closes the log file if it is open. It should be called at the end
+ * of the application to properly close the logging system.
+ */
 void close_logger() {
   if (log_file != NULL) {
     fclose(log_file);
@@ -41,12 +65,32 @@ void close_logger() {
   }
 }
 
+/**
+ * @brief Initializes the logger with the specified file.
+ * 
+ * This function opens the specified log file for appending log messages.
+ * If the file cannot be opened, an error is logged and the function returns -1.
+ * 
+ * @param filename The path to the log file.
+ * 
+ * @return 0 on success, -1 if the file could not be opened.
+ */
 static void get_timestamp(char* buffer, size_t size) {
   time_t now = time(NULL);
   struct tm* tstruct = localtime(&now);
   strftime(buffer, size, "%Y-%m-%d %X", tstruct);
 }
 
+/**
+ * @brief Logs a message with the specified log level.
+ * 
+ * This function logs a formatted message to the log file. It adds a timestamp and
+ * the log level to each message.
+ * 
+ * @param level The log level (INFO, WARN, ERROR).
+ * @param format The format string for the message (similar to printf).
+ * @param ... Additional arguments for the format string.
+ */
 void Log(LogLevel level, const char* format, ...) {
   if (log_file == NULL) {
     ERROR("Logger havn't been initialize, call init_logger() before.\n");

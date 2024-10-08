@@ -22,7 +22,7 @@
 #include <string.h>
 #include <signal.h>
 
-#define CONFIG_FILENAME "proxy.config"
+#define CONFIG_FILENAME "conf/proxy.config"
 
 int listen_fd;
 
@@ -146,7 +146,6 @@ int main() {
           fds[nfds].events = 0;
           fds[nfds].revents = 0;
           free(connections[nfds]);
-          connections[nfds] = NULL;
           continue;
         }
         INFO("Adding the server fd to poll\n");
@@ -238,5 +237,6 @@ int main() {
   
   close(listen_fd);
   close_logger();
+  free_rules();
   return EXIT_SUCCESS;
 }

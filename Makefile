@@ -1,58 +1,68 @@
 CC = gcc
-CFLAGS_RELEASE = -Wall -Wextra -Iincludes
-CFLAGS_DEBUG = -Wall -Wextra -Iincludes -DDEBUG -g
+CFLAGS = -Wall -Wextra -Iincludes
+CFLAGS_DEBUG = -DDEBUG -g
 
-SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c
+SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c src/server_helper.c
 
-RELEASE_OBJS = obj/main.o obj/utils.o obj/server.o obj/http_helper.o obj/logger.o obj/rules.o obj/config.o
+OBJS = $(SRCS:src/%.c=obj/%.o)
+OBJS := $(OBJS:main.c=obj/main.o)  
 
-DEBUG_OBJS = obj/main_debug.o obj/utils_debug.o obj/server_debug.o obj/http_helper_debug.o obj/logger_debug.o obj/rules_debug.o obj/config_debug.o
+DEBUG_OBJS = $(OBJS:.o=_debug.o)
+
+DEBUG_SRCS = $(filter-out main.c, $(SRCS))
+OBJS_TEST = $(DEBUG_SRCS:src/%.c=obj/%.o)
 
 TARGET = proxy
 DEBUG_TARGET = proxy_debug
 
-.PHONY: all debug clean
+TEST_SRCS = test/test_http_helper.c test/test_server.c test/test_logger.c test/test_config.c test/test_rules.c test/test_server_helper.c
+TEST_OBJS = $(TEST_SRCS:test/test_%.c=obj/test_%.o)
+TEST_TARGETS = $(TEST_SRCS:test/%.c=test/%)
+
+.PHONY: all debug clean test docs
 
 all: $(TARGET)
 debug: $(DEBUG_TARGET)
 
-$(TARGET): $(RELEASE_OBJS)
-	$(CC) $(CFLAGS_RELEASE) -o $@ $^
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(DEBUG_TARGET): $(DEBUG_OBJS)
+$(DEBUG_TARGET): $(DEBUG_OBJS) obj/main_debug.o
 	$(CC) $(CFLAGS_DEBUG) -o $@ $^
 
+obj/%.o: src/%.c | obj
+	$(CC) $(CFLAGS) -c $< -o $@
 obj/main.o: main.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/utils.o: src/utils.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/server.o: src/server.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/http_helper.o: src/http_helper.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/logger.o: src/logger.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/rules.o: src/rules.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
-obj/config.o: src/config.c | obj
-	$(CC) $(CFLAGS_RELEASE) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
+obj/%_debug.o: src/%.c | obj
+	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
 obj/main_debug.o: main.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/utils_debug.o: src/utils.c | obj
+
+obj/%.o: test/%.c | obj
 	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/server_debug.o: src/server.c | obj
-	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/http_helper_debug.o: src/http_helper.c | obj
-	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/logger_debug.o: src/logger.c | obj
-	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/rules_debug.o: src/rules.c | obj
-	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
-obj/config_debug.o: src/config.c | obj
-	$(CC) $(CFLAGS_DEBUG) -c $< -o $@
+
 obj:
 	mkdir -p obj
 
 clean:
-	rm -f obj/*.o obj/*.o_debug $(TARGET) $(DEBUG_TARGET)
+	rm -f obj/*.o obj/*_debug.o $(TARGET) $(DEBUG_TARGET) $(TEST_TARGETS)
+	rm -rf docs
+	echo > logs/proxy.log
+
+docs:
+	mkdir -p docs
+	rm -rf docs/*
+	doxygen
+	command -v firefox >/dev/null 2>&1 && firefox docs/html/index.html >/dev/null 2>&1
+
+
+$(TEST_TARGETS): test/%: obj/%.o $(OBJS_TEST)
+	$(CC) $(CFLAGS_DEBUG) -o $@ $^
+
+test: $(TEST_TARGETS)
+	@for test in $(TEST_TARGETS); do \
+		echo "Running $$test..."; \
+		./$$test; \
+	done
