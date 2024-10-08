@@ -20,3 +20,4 @@ test/test_server
 test/test_logger
 test/test_config
 test/test_rules
+test/test_server_helper
