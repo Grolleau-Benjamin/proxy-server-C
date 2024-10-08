@@ -11,14 +11,9 @@ logs/proxy.log
 # objects
 obj/**
 
-<<<<<<< HEAD
-# documentation
-docs
-=======
 # documentation 
 docs
 
 # test
 test/test_http_helper
 test/test_server
->>>>>>> test_logic
