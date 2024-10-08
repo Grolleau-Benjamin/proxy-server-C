@@ -27,8 +27,6 @@ typedef struct {
   char server_ip[INET_ADDRSTRLEN];
 } connection_t;
 
-int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len);
-int read_on_socket_http(int fd, char* buffer, int buffer_size);
 int init_listen_socket(const char* address, int port, int max_client);
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip);
 int handle_connection(connection_t* conn);

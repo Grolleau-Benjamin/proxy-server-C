@@ -4,6 +4,7 @@
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 static regex_t ip_port_regex;
 static regex_t https_regex;
@@ -97,3 +98,40 @@ int replace_localhost_with_ip(char* host) {
     }
     return 0;
 }
+int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
+    INFO("Writing on the fd %d ...\n", fd);
+    int total_sent = 0;
+
+    while (total_sent < buffer_len) {
+        int temp_send = write(fd, buffer + total_sent, buffer_len - total_sent);
+        INFO("write %d bytes\n", temp_send);
+        if (temp_send == -1) {
+            perror("write on server socket");
+            return 1;
+        }
+        total_sent += temp_send;
+    }
+    INFO("Write done on fd %d\n", fd);
+    return 0;
+}
+
+int read_on_socket_http(int fd, char* buffer, int buffer_size) {
+  INFO("Reading from the socket of fd %d\n", fd);
+  int total_bytes_read = 0;
+  int bytes_read;
+
+  while (total_bytes_read != buffer_size) {
+    bytes_read = read(fd, buffer + total_bytes_read, buffer_size - total_bytes_read);
+    if (bytes_read == 0) return total_bytes_read;
+    INFO("Bytes read = %d\n", bytes_read);
+    
+    total_bytes_read += bytes_read;
+    if (strstr(buffer, "\r\n\r\n")) {
+      buffer[total_bytes_read + 1] = '\0';
+      INFO("Read done, total bytes : %d\n", total_bytes_read);
+      return total_bytes_read;
+    }
+  }
+  return total_bytes_read;
+}
+
