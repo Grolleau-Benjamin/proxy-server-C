@@ -55,6 +55,8 @@ docs:
 	mkdir -p docs
 	rm -rf docs/*
 	doxygen
+	command -v firefox >/dev/null 2>&1 && firefox docs/html/index.html >/dev/null 2>&1
+
 
 $(TEST_TARGETS): test/%: obj/%.o $(OBJS_TEST)
 	$(CC) $(CFLAGS_DEBUG) -o $@ $^

@@ -108,7 +108,7 @@ This project is a simple HTTP proxy server written in C. It intercepts HTTP requ
   make docs
   ```
   
-  The documentation will be generated in the `docs/` directory. You can open the `docs/html/index.html` file in your web browser to view the documentation.
+  The documentation will be generated in the `docs/` directory. You can open the `docs/html/index.html` file in your web browser to view the documentation. 
   
 6. **Clean Build (Optional)**
   
