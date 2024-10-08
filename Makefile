@@ -49,7 +49,7 @@ obj:
 clean:
 	rm -f obj/*.o obj/*_debug.o $(TARGET) $(DEBUG_TARGET) $(TEST_TARGETS)
 	rm -rf docs
-	echo > proxy.log
+	echo > logs/proxy.log
 
 docs:
 	mkdir -p docs
