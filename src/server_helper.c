@@ -6,10 +6,11 @@
 #include <string.h>
 
 static regex_t ip_port_regex;
+static regex_t https_regex;
 static int regex_compiled = 0;
 
 int init_regex() {
-  const char* pattern = 
+  const char* ip_port_pattern = 
     "^((25[0-5]|"                                 // from 250 to 255
     "2[0-4][0-9]|"                                // from 200 to 249
     "1[0-9]{2}|"                                  // from 100 to 199
@@ -22,37 +23,77 @@ int init_regex() {
     "6[0-4][0-9]{3}|"                              // from 60000 to 64999
     "[1-5][0-9]{4}|"                               // fron 10000 to 59999
     "[1-9][0-9]{0,3})$";                           // from 1 to 9999
+  const char* https_pattern = "^[a-zA-Z0-9.-]+:443$";
 
-  int ret = regcomp(&ip_port_regex, pattern, REG_EXTENDED); 
+  int ret = regcomp(&ip_port_regex, ip_port_pattern, REG_EXTENDED); 
   if (ret != 0) {
-    ERROR("Echec during the compilation of the regex\n");
+    ERROR("Echec during the compilation of the IP:Port regex\n");
     print_error(ret, "regex");
+    return 1;
   }
-  
+
+  ret = regcomp(&https_regex, https_pattern, REG_EXTENDED); 
+  if (ret != 0) {
+    ERROR("Echec during the compilation of the HTTPS regex\n");
+    print_error(ret, "regex");
+    return 1;
+  }
+
   regex_compiled = 1;
   return 0;
 }
 
 void free_regex() {
-    if (regex_compiled) {
-        regfree(&ip_port_regex);
-        regex_compiled = 0;
-    }
+  if (regex_compiled) {
+    regfree(&ip_port_regex);
+    regfree(&https_regex);
+    regex_compiled = 0;
+  }
 }
 
 int is_ip_port_format(const char *host, char **ip, char **port) {
   if (!regex_compiled) {
-    ERROR("Regex is not compile. Call init_regex() before.\n");
+    ERROR("Regex is not compiled. Call init_regex() before.\n");
     print_error(-1, "regex_not_compiled");
+    return 0;
   }
-  
+
   if (regexec(&ip_port_regex, host, 0, NULL, 0) == 0) {
     char* split_pos = strchr(host, ':');
-    if(split_pos == NULL) return 0;
+    if (split_pos == NULL) return 0;
     size_t ip_len = split_pos - host;
     *ip = strndup(host, ip_len);
     *port = strdup(split_pos + 1); 
     return 1;
   }
   return 0;
+}
+
+int is_host_https_format(const char* host) {
+  if (!regex_compiled) {
+    ERROR("Regex is not compiled. Call init_regex() before.\n");
+    print_error(-1, "regex_not_compiled");
+    return 0;
+  }
+
+  if (regexec(&https_regex, host, 0, NULL, 0) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int replace_localhost_with_ip(char* host) {
+    const char* localhost = "localhost";
+    const char* localhost_ip = "127.0.0.1";
+    char* split_pos = strchr(host, ':');
+
+    if (split_pos != NULL && strncmp(host, localhost, strlen(localhost)) == 0) {
+        char* port = strdup(split_pos + 1);
+
+        snprintf(host, strlen(localhost_ip) + strlen(port) + 2, "%s:%s", localhost_ip, port);
+
+        free(port);
+        return 1;
+    }
+    return 0;
 }

@@ -11,10 +11,17 @@
  * 
  * See the LICENSE file for the full license text.
  */
+ #define HTTP_404_RESPONSE "HTTP/1.1 404 Not Found\r\n" \
+                          "Content-Type: text/html\r\n" \
+                          "Content-Length: 13\r\n" \
+                          "\r\n" \
+                          "<h1>404</h1>"
+
 
 #include "../includes/server.h"
 #include "../includes/utils.h"
 #include "../includes/logger.h"
+#include "../includes/server_helper.h"
 #include <arpa/inet.h>
 
 int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
@@ -113,7 +120,7 @@ int handle_connection(connection_t* conn) {
     
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       int ret = handle_http(conn);
-      if (ret == -1) { return 1; }
+      if (ret == 1) { return 1; }
       memset(conn->client_buffer, 0, sizeof(conn->client_buffer));
       conn->client_buffer_len = 0;
       total_bytes_read = 0;
@@ -134,72 +141,126 @@ int handle_connection(connection_t* conn) {
 
 // TODO: write HTTP'404 request before return 1 and closing the socket.
 int handle_http(connection_t* conn) {
-  INFO("Handle HTTP function\n");
-  
-  char host[256] = {0};
-  if (get_http_host(conn->client_buffer, host, sizeof(host)) == 0) {
-    INFO("Host: %s\n", host);
-  } else {
-    WARN("Failed to retrieve host from request.\n");
-    Log(LOG_LEVEL_WARN, "%s made a request without a valid Host header.", conn->client_ip);
-    return 1;
-  }
-
-  Log(LOG_LEVEL_INFO, "%s asked for %s", conn->client_ip, host);
-
-    struct addrinfo hints, *res;
-    int status;
-    char ipstr[INET6_ADDRSTRLEN];
-    int sockfd;
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET; // Use AF_INET for IPv4
-    hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
-
-    // Get address info for the hostname, using port 80 (HTTP)
-    if ((status = getaddrinfo(host, "80", &hints, &res)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-        return 2;
+    INFO("Handle HTTP function\n");
+    
+    char host[256] = {0};
+    if (get_http_host(conn->client_buffer, host, sizeof(host)) == 0) {
+        INFO("Host: %s\n", host);
+    } else {
+        WARN("Failed to retrieve host from request.\n");
+        Log(LOG_LEVEL_WARN, "%s made a request without a valid Host header.", conn->client_ip);
+        return 1;
     }
 
-    // Use the first result directly
-    struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
-    void *addr = &(ipv4->sin_addr);
+    Log(LOG_LEVEL_INFO, "%s asked for %s", conn->client_ip, host);
 
-    // Create socket
-    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockfd == -1) {
-        ERROR("socket");
-        freeaddrinfo(res);  // Free the address info in case of failure
-        return 3;
+    char* ip = NULL;
+    char* port = NULL;
+    int sockfd = -1;
+    struct addrinfo *res = NULL;
+
+    if(replace_localhost_with_ip(host)) {
+        INFO("Localhost have been handle, new request: %s", conn->client_buffer);
     }
 
-    // Connect to the server
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
-        ERROR("connect");
+    // Si le format IP:Port est valide, on se connecte directement
+    if (is_host_https_format(host)) {
+        WARN("https format for %s\n", host);
+        WARN("Sending a 404 not found\n");
+        write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
+        return 1;
+    }
+    else if (is_ip_port_format(host, &ip, &port)) {
+        INFO("is_ip_port_format\n");
+        INFO("IP: %s\n\tPort: %s\n", ip, port);
+
+        struct sockaddr_in serv_addr;
+        memset(&serv_addr, 0, sizeof(serv_addr));
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(atoi(port));
+
+        if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+            ERROR("Invalid IP address");
+            return 1;
+        }
+
+        // Création du socket
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd == -1) {
+            ERROR("socket creation failed");
+            return 3;
+        }
+
+        // Connexion directe
+        if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
+            ERROR("Failed to connect");
+            close(sockfd);
+            return 4;
+        }
+
+        INFO("Connected to %s on port %s\n", ip, port);
+    } else {
+        // Sinon, résolution DNS et connexion
+        struct addrinfo hints;
+        int status;
+        char ipstr[INET6_ADDRSTRLEN];
+
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;  // Utilisation d'IPv4
+        hints.ai_socktype = SOCK_STREAM;  // Sockets TCP
+
+        // Récupération des infos d'adresse pour le hostname, port 80 (HTTP)
+        if ((status = getaddrinfo(host, "80", &hints, &res)) != 0) {
+            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+            return 2;
+        }
+
+        // Utilisation du premier résultat
+        struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
+        void *addr = &(ipv4->sin_addr);
+
+        // Création du socket
+        sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (sockfd == -1) {
+            ERROR("socket creation failed");
+            freeaddrinfo(res);
+            return 3;
+        }
+
+        // Connexion au serveur
+        if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+            ERROR("Failed to connect");
+            close(sockfd);
+            freeaddrinfo(res);
+            return 4;
+        }
+
+        inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
+        INFO("Connected to %s on port 80\n", ipstr);
+    }
+
+    // Ecriture dans le socket
+    if (write_on_socket_http_from_buffer(sockfd, conn->client_buffer, conn->client_buffer_len) != 0) {
+        ERROR("Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
+        Log(LOG_LEVEL_ERROR, "Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
+
+        if (res != NULL) {
+            freeaddrinfo(res);
+        }
         close(sockfd);
-        freeaddrinfo(res);  // Free the address info in case of failure
-        return 4;
+        return 1;
+    } else {
+        INFO("Writing OK\n");
     }
 
-    // Convert the IP to a string and print it
-    inet_ntop(res->ai_family, addr, ipstr, sizeof ipstr);
-    printf("Connected to %s on port 80\n", ipstr);
+    // Assignation du socket au serveur
+    conn->server_fd = sockfd;
 
-  if (write_on_socket_http_from_buffer(sockfd, conn->client_buffer, conn->client_buffer_len) != 0) {
-    ERROR("Error while writing on the socket to the host %s,  ip %s", host, conn->server_ip);
-    Log(LOG_LEVEL_ERROR, "Error while writing on the socket to the host %s,  ip %s", host, conn->server_ip);
-    freeaddrinfo(res);
-    return 1;
-  } else {
-    INFO("Writing OK\n");
-  }
+    // Libération des ressources
+    if (res != NULL) {
+        freeaddrinfo(res);
+    }
 
-
-  conn->server_fd = sockfd;
-
-  freeaddrinfo(res);
-  INFO("end of handle http\n");
-  return 0;
+    INFO("End of handle_http\n");
+    return 0;
 }
-
