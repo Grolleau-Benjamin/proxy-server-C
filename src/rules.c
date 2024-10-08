@@ -12,16 +12,38 @@
  * See the LICENSE file for the full license text.
  */
 
+/**
+ * @file rules.c
+ * @brief Implementation of the rules management functions.
+ *
+ * This file contains the implementation of functions used to load, manage, and
+ * free filtering rules from a configuration file.
+ */
+
 #include "../includes/rules.h"
+#include "../includes/utils.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Global variable holding the filtering rules.
+ */
 rules_t rules = {
   .rules = NULL,
   .nb_rules = 0
 };
 
+/**
+ * @brief Loads the filtering rules from a configuration file.
+ *
+ * This function reads a configuration file that defines filtering rules in categories.
+ * Each category can contain banned domains and banned words. The file is expected to 
+ * follow a specific format, with categories enclosed in brackets and rules defined 
+ * under each category.
+ *
+ * @param filename The path to the configuration file.
+ * @return 0 on success, -1 if the file could not be opened or an error occurred.
+ */
 int init_rules(const char* filename) {
   INFO("Loading rules config from %s\n", filename);
 
@@ -84,6 +106,12 @@ int init_rules(const char* filename) {
   return 0;
 }
 
+/**
+ * @brief Frees the memory allocated for the rules.
+ *
+ * This function releases the memory allocated for all categories, including 
+ * the banned domains and words within each category, and resets the rules.
+ */
 void free_rules() {
   for (size_t i = 0; i < rules.nb_rules; i++) {
     categories* cat = &rules.rules[i];
