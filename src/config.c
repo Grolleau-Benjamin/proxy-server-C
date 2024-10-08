@@ -12,18 +12,35 @@
  * See the LICENSE file for the full license text.
  */
 
+/**
+ * @file config.c
+ * @brief Implementation of the configuration loading functions for the proxy server.
+ *
+ * This file contains the definition of the functions used to load and initialize
+ * the proxy server's configuration from a configuration file.
+ */
+
 #include "../includes/config.h"
-#include <stdio.h>
 #include <string.h>
 
 config_t config = {
   .port = 8080,
   .address = "127.0.0.1", 
   .max_client = 10,
-  .logger_filename = "proxy.log",
-  .rules_filename = "proxy.rules"
+  .logger_filename = "logs/proxy.log",
+  .rules_filename = "conf/proxy.rules"
 };
 
+/**
+ * @brief Initializes the configuration from a file.
+ * 
+ * Reads the configuration file specified by `filename` and loads the proxy
+ * server's configuration settings.
+ * 
+ * @param filename The path to the configuration file.
+ * 
+ * @return 0 on success, -1 if the file cannot be opened.
+ */
 int init_config(const char* filename){
   INFO("Loading config from %s\n", filename);
 

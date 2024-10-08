@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define CONFIG_FILENAME "proxy.config"
+#define CONFIG_FILENAME "conf/proxy.config"
 
 int main() {
   INFO("Test info\n");     // TODO: Delete
