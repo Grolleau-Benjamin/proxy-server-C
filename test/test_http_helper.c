@@ -1,13 +1,7 @@
+#include <assert.h>
+#include <string.h>
 #include "../includes/http_helper.h"
 #include "../includes/utils.h"
-
-void check_result(int result, const char* description) {
-    if (result) {
-        INFO("PASS: %s\n", description);
-    } else {
-        ERROR("FAIL: %s\n", description);
-    }
-}
 
 void test_is_http_method() {
     INFO("Testing is_http_method...\n");
@@ -15,8 +9,11 @@ void test_is_http_method() {
     const char* valid_method = "GET";
     const char* invalid_method = "INVALID";
 
-    check_result(is_http_method(valid_method), "Valid method is recognized as valid");
-    check_result(!is_http_method(invalid_method), "Invalid method is correctly not recognized");
+    assert(is_http_method(valid_method));
+    INFO("\tsuccess: Valid method has been recognized as valid\n");
+
+    assert(!is_http_method(invalid_method));
+    INFO("\tsuccess: Invalid method has been recognized as invalid\n");
 }
 
 void test_is_http_request_complete() {
@@ -28,11 +25,20 @@ void test_is_http_request_complete() {
     const char* incomplete_request3 = "GET / \r\nHost: example.com\r\n";
     const char* incomplete_request4 = "GET HTTP/1.1 \r\nHost: example.com\r\n";
 
-    check_result(is_http_request_complete(complete_request), "Complete request is recognized as complete");
-    check_result(!is_http_request_complete(incomplete_request), "Incomplete request without final CRLF is correctly not recognized");
-    check_result(!is_http_request_complete(incomplete_request2), "Incomplete request without Host header is correctly not recognized");
-    check_result(!is_http_request_complete(incomplete_request3), "Incomplete request without proper HTTP version is correctly not recognized");
-    check_result(!is_http_request_complete(incomplete_request4), "Incomplete request with malformed request line is correctly not recognized");
+    assert(is_http_request_complete(complete_request));
+    INFO("\tsuccess: Complete request has been recognized as complete\n");
+
+    assert(!is_http_request_complete(incomplete_request));
+    INFO("\tsuccess: Incomplete request without final CRLF has been recognized as incomplete\n");
+
+    assert(!is_http_request_complete(incomplete_request2));
+    INFO("\tsuccess: Incomplete request without Host header has been recognized as incomplete\n");
+
+    assert(!is_http_request_complete(incomplete_request3));
+    INFO("\tsuccess: Incomplete request without proper HTTP version has been recognized as incomplete\n");
+
+    assert(!is_http_request_complete(incomplete_request4));
+    INFO("\tsuccess: Incomplete request with malformed request line has been recognized as incomplete\n");
 }
 
 void test_get_http_host() {
@@ -41,11 +47,13 @@ void test_get_http_host() {
     const char* request = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n";
     char host[256];
     int result = get_http_host(request, host, sizeof(host));
-    check_result(result == 0 && strcmp(host, "example.com") == 0, "Host extracted successfully");
+    assert(result == 0 && strcmp(host, "example.com") == 0);
+    INFO("\tsuccess: Host has been extracted successfully\n");
 
     const char* bad_request = "GET / HTTP/1.1\r\n\r\n"; 
     result = get_http_host(bad_request, host, sizeof(host));
-    check_result(result == -1, "No host found as expected");
+    assert(result == -1);
+    INFO("\tsuccess: No host found as expected\n");
 }
 
 int main() {

@@ -8,3 +8,9 @@ proxy.log
 # objects
 obj/**
 
+# documentation 
+docs
+
+# test
+test/test_http_helper
+test/test_server
