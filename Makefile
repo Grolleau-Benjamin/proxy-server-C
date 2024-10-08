@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iincludes
 CFLAGS_DEBUG = -DDEBUG -g
 
-SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c
+SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c src/server_helper.c
 
 OBJS = $(SRCS:src/%.c=obj/%.o)
 OBJS := $(OBJS:main.c=obj/main.o)  
@@ -15,7 +15,7 @@ OBJS_TEST = $(DEBUG_SRCS:src/%.c=obj/%.o)
 TARGET = proxy
 DEBUG_TARGET = proxy_debug
 
-TEST_SRCS = test/test_http_helper.c test/test_server.c test/test_logger.c test/test_config.c test/test_rules.c
+TEST_SRCS = test/test_http_helper.c test/test_server.c test/test_logger.c test/test_config.c test/test_rules.c test/test_server_helper.c
 TEST_OBJS = $(TEST_SRCS:test/test_%.c=obj/test_%.o)
 TEST_TARGETS = $(TEST_SRCS:test/%.c=test/%)
 
