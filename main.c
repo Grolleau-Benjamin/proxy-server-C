@@ -99,7 +99,7 @@ int main() {
       // Refer to: man poll
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)){
         if (i != 0) { // not the listening socket
-          ERROR("Error on socket %d, closing the connection, error\n", fds[i].fd);
+          WARN("Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error\n", fds[i].fd);
           close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) close(connections[i]->client_fd);
