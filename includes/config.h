@@ -34,17 +34,6 @@ typedef struct {
  */
 extern config_t config;
 
-
-/**
- * @brief Initializes the configuration from a file.
- * 
- * Reads the configuration file specified by `filename` and loads the proxy
- * server's configuration settings.
- * 
- * @param filename The path to the configuration file.
- * 
- * @return 0 on success, -1 if the file cannot be opened.
- */
 int init_config(const char* filename);
 
 #endif

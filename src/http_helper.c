@@ -12,12 +12,37 @@
  * See the LICENSE file for the full license text.
  */
 
+/**
+ * @file http_helper.c
+ * @brief Implementation of HTTP helper functions.
+ *
+ * This file contains the implementation of functions that assist in
+ * handling and validating HTTP requests.
+ */
+
+#include <string.h>
+
+#include "../includes/utils.h"
 #include "../includes/http_helper.h"
 
+/**
+ * @brief HTTP methods
+ *
+ * This list contains all HTTP methods
+ */
 const char* http_methods[] = {
   "GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"
 };
 
+/**
+ * @brief Checks if the buffer contains a valid HTTP method.
+ *
+ * This function compares the start of the buffer with known HTTP methods
+ * and returns 1 if a valid method is found, otherwise returns 0.
+ *
+ * @param buffer The buffer to check for an HTTP method.
+ * @return 1 if the buffer contains a valid HTTP method, 0 otherwise.
+ */
 int is_http_method(const char* buffer) {
   for(size_t i = 0; i < sizeof(http_methods) / sizeof(http_methods[0]); i++) {
     if (strncmp(buffer, http_methods[i], strlen(http_methods[i])) == 0) {
@@ -27,6 +52,15 @@ int is_http_method(const char* buffer) {
   return 0;
 }
 
+/**
+ * @brief Checks if an HTTP request is complete.
+ *
+ * This function checks if the buffer contains a complete HTTP request,
+ * including the method, path, HTTP version, and necessary headers.
+ *
+ * @param buffer The buffer containing the HTTP request.
+ * @return 1 if the request is complete, 0 otherwise.
+ */
 int is_http_request_complete(const char* buffer) {
     if (!buffer) return 0;
     
@@ -58,6 +92,17 @@ int is_http_request_complete(const char* buffer) {
     return 0;
 }
 
+/**
+ * @brief Extracts the host from an HTTP request.
+ *
+ * This function searches for the "Host" header in the HTTP request and
+ * extracts the host value into the provided `host` buffer.
+ *
+ * @param buffer The buffer containing the HTTP request.
+ * @param host The buffer to store the extracted host.
+ * @param host_size The size of the `host` buffer.
+ * @return 0 if the host was successfully extracted, -1 otherwise.
+ */
 int get_http_host(const char* buffer, char* host, size_t host_size) { 
   char* host_header = NULL;
   char* end_of_host = NULL;
