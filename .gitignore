@@ -17,3 +17,5 @@ docs
 # test
 test/test_http_helper
 test/test_server
+test/test_logger
+test/test_config
