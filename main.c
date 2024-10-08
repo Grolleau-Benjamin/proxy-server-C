@@ -20,10 +20,30 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #define CONFIG_FILENAME "proxy.config"
 
+int listen_fd;
+
+void handle_sigint(int sig) {
+    INFO("Caught signal %d, shutting down...\n", sig);
+
+    // Close the listen socket
+    if (listen_fd != -1) {
+        close(listen_fd);
+        INFO("Closed listen_fd\n");
+    }
+
+    // Optional: Close logger and other resources
+    close_logger();
+
+    exit(0);  // Exit the program gracefully
+}
+
 int main() {
+  signal(SIGINT, handle_sigint);
+
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
@@ -48,7 +68,7 @@ int main() {
 
   Log(LOG_LEVEL_INFO, "Application start.");
   
-  int listen_fd;
+
   struct sockaddr_in client_addr;
 
   listen_fd = init_listen_socket(config.address, config.port, config.max_client);
@@ -69,7 +89,9 @@ int main() {
     print_error(activity, "poll");
 
     for (int i = 0; i < nfds; i++) {
-
+      // INFO("fd : %d\n", fds[i].fd);
+      // INFO("event : %d\n", fds[i].events);
+      // INFO("revent : %d\n", fds[i].revents);
       // If there is no events detected, juste skip the loop and go to next i
       if (fds[i].revents == 0) continue;
 
@@ -77,21 +99,22 @@ int main() {
       // Refer to: man poll
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)){
         if (i != 0) { // not the listening socket
-          ERROR("Error on socket %d, closing the connection\n", fds[i].fd);
+          ERROR("Error on socket %d, closing the connection, error\n", fds[i].fd);
           close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) close(connections[i]->client_fd);
             if (connections[i]->server_fd != -1) close(connections[i]->server_fd);
             free(connections[i]);
-            connections[i] = NULL;
           }
           fds[i].fd = -1;
+          fds[i].revents = 0;
+          
         }
         continue;
       }
 
       // Action on the listenning socket => new connection
-      if (fds[i].fd == listen_fd) {
+      if (fds[i].fd == listen_fd && (fds[i].revents & POLLIN) == POLLIN) {
         char client_ip[INET_ADDRSTRLEN];
         int new_client_fd = accept_connection(listen_fd, &client_addr, client_ip);
         
@@ -102,6 +125,9 @@ int main() {
         if (connections[nfds] == NULL) {
           perror("malloc");
           close(new_client_fd);
+          fds[nfds].fd = -1;
+          fds[nfds].events = 0;
+          fds[nfds].revents = 0;
         }
         
         connections[nfds]->client_fd = new_client_fd;
@@ -110,20 +136,87 @@ int main() {
         connections[nfds]->server_buffer_len = 0;
         strcpy(connections[nfds]->client_ip, client_ip);
         memset(connections[nfds]->server_ip, 0, sizeof(connections[nfds]->server_ip));
+        int close_conn = handle_connection(connections[nfds]);
 
-        nfds++;
-      } else {
-        int close_conn = handle_connection(connections[i]);
-        
         if (close_conn) {
-          INFO("Closing connection for fd %d\n", fds[i].fd);
-          close(fds[i].fd);
-          fds[i].fd = -1;
-          fds[i].revents = 0;
-          free(connections[i]);
-          connections[i] = NULL;
-          nfds --;
-          INFO("Connection closed!\n");
+          WARN("Clossing connections\n");
+          close(connections[nfds]->client_fd);
+          close(connections[nfds]->server_fd);
+          fds[nfds].fd = -1;
+          fds[nfds].events = 0;
+          fds[nfds].revents = 0;
+          free(connections[nfds]);
+          connections[nfds] = NULL;
+          continue;
+        }
+        INFO("Adding the server fd to poll\n");
+        nfds++; // Server fd position
+
+        connections[nfds] = connections[nfds -1];
+        fds[nfds].fd = connections[nfds]->server_fd;
+        fds[nfds].events = POLLIN;
+        fds[nfds].revents = 0;
+        INFO("Connected to the server\n");
+
+        nfds++; // Next client fd position
+      } else {
+        //int close_conn = handle_connection(connections[i]);
+        int ret;
+        // verify if it's the server or the client or Null
+        connection_t *conn = connections[i];
+
+        if (conn == NULL)
+          continue;
+
+                        if (fds[i].fd == conn->client_fd && (fds[i].revents & POLLIN)) {
+                    // Lecture depuis le client et envoi au serveur
+                    ssize_t bytes = read(conn->client_fd, conn->client_buffer, sizeof(conn->client_buffer));
+                    if (bytes <= 0) {
+                        // Fermeture de la connexion
+                        close(conn->client_fd);
+                        close(conn->server_fd);
+                        // connections[i] = NULL;
+                        // Retirer les descripteurs du tableau
+                        fds[i].fd = -1;
+                        fds[i].revents =0;
+                        continue;
+                    }
+                    // Envoyer au serveur
+                    if (write(conn->server_fd, conn->client_buffer, bytes) < 0) {
+                        perror("write to server");
+                        close(conn->client_fd);
+                        close(conn->server_fd);
+                        // connections[i] = NULL;
+                        fds[i].fd = -1;
+                        fds[i].revents =0;
+                        continue;
+                    }
+                }
+
+                if (fds[i].fd == conn->server_fd && (fds[i].revents & POLLIN)) {
+                    // Lecture depuis le serveur et envoi au client
+                    ssize_t bytes = read(conn->server_fd, conn->server_buffer, sizeof(conn->server_buffer));
+                    if (bytes <= 0) {
+                        // Fermeture de la connexion
+                        close(conn->client_fd);
+                        close(conn->server_fd);
+                        // connections[i] = NULL;
+                        // Retirer les descripteurs du tableau
+                        fds[i].fd = -1;
+                        fds[i].revents =0;
+                        continue;
+                    }
+                    // Envoyer au client
+                    if (write(conn->client_fd, conn->server_buffer, bytes) < 0) {
+                        perror("write to client");
+                        close(conn->client_fd);
+                        close(conn->server_fd);
+                        // connections[i] = NULL;
+                        fds[i].fd = -1;
+                        fds[i].revents =0;
+                        continue;
+                    }
+                
         }
       }
     }
@@ -134,6 +227,8 @@ int main() {
       if (fds[i].fd != -1) {
         if (i != new_nfds) {
           fds[new_nfds] = fds[i];
+          connections[new_nfds] = connections[i];
+          connections[i] = NULL;
         }
         new_nfds ++;
       }

@@ -17,6 +17,43 @@
 #include "../includes/logger.h"
 #include <arpa/inet.h>
 
+int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
+    INFO("Writing on the fd %d ...\n", fd);
+    int total_sent = 0;
+
+    while (total_sent < buffer_len) {
+        int temp_send = write(fd, buffer + total_sent, buffer_len - total_sent);
+        INFO("write %d bytes\n", temp_send);
+        if (temp_send == -1) {
+            perror("write on server socket");
+            return 1;
+        }
+        total_sent += temp_send;
+    }
+    INFO("Write done on fd %d\n", fd);
+    return 0;
+}
+
+int read_on_socket_http(int fd, char* buffer, int buffer_size) {
+  INFO("Reading from the socket of fd %d\n", fd);
+  int total_bytes_read = 0;
+  int bytes_read;
+
+  while (total_bytes_read != buffer_size) {
+    bytes_read = read(fd, buffer + total_bytes_read, buffer_size - total_bytes_read);
+    if (bytes_read == 0) return total_bytes_read;
+    INFO("Bytes read = %d\n", bytes_read);
+    
+    total_bytes_read += bytes_read;
+    if (strstr(buffer, "\r\n\r\n")) {
+      buffer[total_bytes_read + 1] = '\0';
+      INFO("Read done, total bytes : %d\n", total_bytes_read);
+      return total_bytes_read;
+    }
+  }
+  return total_bytes_read;
+}
+
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
   struct sockaddr_in server_addr;
@@ -80,6 +117,7 @@ int handle_connection(connection_t* conn) {
       memset(conn->client_buffer, 0, sizeof(conn->client_buffer));
       conn->client_buffer_len = 0;
       total_bytes_read = 0;
+      return 0;
     }
 
     if (total_bytes_read == BUFFER_SIZE) {
@@ -109,23 +147,59 @@ int handle_http(connection_t* conn) {
 
   Log(LOG_LEVEL_INFO, "%s asked for %s", conn->client_ip, host);
 
-  // TODO: Host and buffer filter
+    struct addrinfo hints, *res;
+    int status;
+    char ipstr[INET6_ADDRSTRLEN];
+    int sockfd;
 
-  struct hostent *he = gethostbyname(host);
-  if (he == NULL) {
-    perror("gethostbyname");
-    ERROR("Error while solving host %s for the client client %s\n", host, conn->client_ip);
-    Log(LOG_LEVEL_ERROR, "Error while solving host %s for the client client %s", host, conn->client_ip);
-    return 1;
-  }  
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET; // Use AF_INET for IPv4
+    hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
-  char ip[INET_ADDRSTRLEN];
-  if (inet_ntop(AF_INET, he->h_addr, ip, sizeof(ip)) == NULL) {
-    perror("inet_ntop");
-    ERROR("Error while converting %s's ip to writable string\n", host); 
+    // Get address info for the hostname, using port 80 (HTTP)
+    if ((status = getaddrinfo(host, "80", &hints, &res)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        return 2;
+    }
+
+    // Use the first result directly
+    struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
+    void *addr = &(ipv4->sin_addr);
+
+    // Create socket
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd == -1) {
+        ERROR("socket");
+        freeaddrinfo(res);  // Free the address info in case of failure
+        return 3;
+    }
+
+    // Connect to the server
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+        ERROR("connect");
+        close(sockfd);
+        freeaddrinfo(res);  // Free the address info in case of failure
+        return 4;
+    }
+
+    // Convert the IP to a string and print it
+    inet_ntop(res->ai_family, addr, ipstr, sizeof ipstr);
+    printf("Connected to %s on port 80\n", ipstr);
+
+  if (write_on_socket_http_from_buffer(sockfd, conn->client_buffer, conn->client_buffer_len) != 0) {
+    ERROR("Error while writing on the socket to the host %s,  ip %s", host, conn->server_ip);
+    Log(LOG_LEVEL_ERROR, "Error while writing on the socket to the host %s,  ip %s", host, conn->server_ip);
+    freeaddrinfo(res);
     return 1;
+  } else {
+    INFO("Writing OK\n");
   }
-  INFO("Host %s have IPv4 %s\n", host, ip);
-  
+
+
+  conn->server_fd = sockfd;
+
+  freeaddrinfo(res);
+  INFO("end of handle http\n");
   return 0;
 }
+

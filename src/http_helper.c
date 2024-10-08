@@ -19,6 +19,7 @@ const char* http_methods[] = {
 };
 
 int is_http_method(const char* buffer) {
+  // TODO : for the HTTPS part, add http verification - Alexis
   for(size_t i = 0; i < sizeof(http_methods) / sizeof(http_methods[0]); i++) {
     if (strncmp(buffer, http_methods[i], strlen(http_methods[i])) == 0) {
       return 1;
