@@ -126,3 +126,13 @@ void free_rules() {
   rules.rules = NULL;
   rules.nb_rules = 0;
 }
+
+int is_host_deny(const char* host) {
+  for (int i = 0; i < rules.nb_rules; i++) {
+    // INFO("nb domain : %d\n",  (int)rules.rules[i].domain_count);
+    for (int j = 0; j < rules.rules[i].domain_count; j++) {
+      if (host == rules.rules[i].ban_domain_list[j]) return 1;
+    }
+  }
+  return 0;
+}

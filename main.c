@@ -25,8 +25,12 @@
 
 #define CONFIG_FILENAME "conf/proxy.config"
 
+shutdown(sock_fd, SHUT_RDWR); // Arrêter l'écoute proprement
+close(sock_fd);  
 
 int main() {
+
+  
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
@@ -96,13 +100,15 @@ int main() {
                 INFO("fds (%d): %d\n", i, fds[i].fd);
                 INFO("fds + 1 (%d): %d\n", i+1, fds[i+1].fd);
               }
+              connections[i]->client_fd = -1;
             }
+
             if (connections[i]->server_fd != -1){
               close(connections[i]->server_fd);
               if (fds[i].fd == connections[i]->server_fd) {
                 INFO("Error on server\n");
               }
-              
+              connections[i]->server_fd = -1;
             }
             free(connections[i]);
           }
@@ -123,7 +129,7 @@ int main() {
 
         connections[nfds] = malloc(sizeof(connection_t));
         if (connections[nfds] == NULL) {
-          perror("malloc");
+          ERROR("malloc\n");
           close(new_client_fd);
           fds[nfds].fd = -1;
           fds[nfds].events = 0;
@@ -190,17 +196,19 @@ int main() {
             fds[i].revents =0;
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
+            free(connections[i]);
             continue;
           }
             // Envoyer au serveur
           if (write(conn->server_fd, conn->client_buffer, bytes) < 0) {
-            perror("write to server");
+            ERROR("write to server\n");
             close(conn->client_fd);
             close(conn->server_fd);
             fds[i].fd = -1;
             fds[i].revents =0;
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
+            free(connections[i]);
             continue;
           }
         }
@@ -227,14 +235,15 @@ int main() {
               fds[i].revents = 0;
               fds[i-1].fd = -1;
               fds[i-1].revents = 0;
-
+              free(connections[i]);
               INFO("Connection close\n");
               continue;
           }
           // Envoyer au client
           int ret = write(conn->client_fd, conn->server_buffer, bytes);
           if (ret < 0) {
-            perror("write to client");
+            ERROR("write to client\n");
+
             close(conn->client_fd);
             close(conn->server_fd);
             // connections[i] = NULL;
@@ -242,6 +251,7 @@ int main() {
             fds[i].revents =0;
             fds[i-1].fd = -1;
             fds[i-1].revents = 0;
+            free(connections[i]);
             continue;
           } else {
             INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
