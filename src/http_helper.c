@@ -25,6 +25,12 @@
 #include "../includes/utils.h"
 #include "../includes/http_helper.h"
 
+#define HTTP_404_RESPONSE "HTTP/1.1 404 Not Found\r\n" \
+                        "Content-Type: text/html\r\n" \
+                        "Content-Length: 13\r\n" \
+                        "\r\n" \
+                        "<h1>404</h1>"
+
 /**
  * @brief HTTP methods
  *
