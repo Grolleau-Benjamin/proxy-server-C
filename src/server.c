@@ -42,6 +42,7 @@ int init_listen_socket(const char* address, int port, int max_client) {
   return listen_fd;
 }
 
+// TODO: handle max connection and refuse if more
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip) {
     socklen_t addr_len = sizeof(struct sockaddr_in);
     int new_client_fd = accept(listen_fd, (struct sockaddr*)client_addr, &addr_len);
