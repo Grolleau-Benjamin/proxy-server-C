@@ -1,15 +1,15 @@
 # rules for proxy
 
 [gambling]
-BAN_DOMAIN http://gamblingsite1.com
-BAN_DOMAIN http://gamblingsite2.com
+BAN_DOMAIN gamblingsite1.com
+BAN_DOMAIN gamblingsite2.com
 BAN_WORD bet
 BAN_WORD casino
 
 [scam]
-BAN_DOMAIN http://scamsite1.com
-BAN_DOMAIN http://scamsite2.com
+BAN_DOMAIN scamsite1.com
+BAN_DOMAIN scamsite2.com
 
 [others]
-BAN_DOMAIN http://darkwebsite.com
+BAN_DOMAIN darkwebsite.com
 BAN_WORD darkweb

@@ -3,6 +3,12 @@
 
 #include <stdlib.h>
 
+#define HTTP_404_RESPONSE "HTTP/1.1 404 Not Found\r\n" \
+                        "Content-Type: text/html\r\n" \
+                        "Content-Length: 13\r\n" \
+                        "\r\n" \
+                        "<h1>404</h1>"
+                        
 /**
  * @file http_helper.h
  * @brief Helper functions for handling HTTP requests.
