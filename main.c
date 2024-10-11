@@ -136,6 +136,7 @@ int main() {
         connections[nfds]->server_buffer_len = 0;
         strcpy(connections[nfds]->client_ip, client_ip);
         memset(connections[nfds]->server_ip, 0, sizeof(connections[nfds]->server_ip));
+        memset(connections[nfds]->client_buffer, 0, sizeof(connections[nfds]->client_buffer));
         int close_conn = handle_connection(connections[nfds]);
 
         if (close_conn) {
@@ -143,7 +144,6 @@ int main() {
           close(connections[nfds]->client_fd);
           close(connections[nfds]->server_fd);
           fds[nfds].fd = -1;
-          fds[nfds].events = 0;
           fds[nfds].revents = 0;
           free(connections[nfds]);
           continue;

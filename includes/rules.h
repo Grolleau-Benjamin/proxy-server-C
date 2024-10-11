@@ -62,5 +62,6 @@ extern rules_t rules;
 
 int init_rules(const char* filename);
 void free_rules();
+int is_host_deny(const char* host);
 
 #endif
