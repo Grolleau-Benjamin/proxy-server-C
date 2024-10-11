@@ -143,17 +143,7 @@ int handle_http(connection_t* conn) {
 
     if ( is_host_deny(host) ) {
         WARN("the host %s is deny\n", host);
-        write_on_socket_http_from_buffer(conn->client_fd, HTTP_401_RESPONSE, sizeof(HTTP_401_RESPONSE));
-        return 1;
-    }
-
-    INFO("the host is allowed !\n");
-
-    INFO("Checking if host '%s's is allowed ...\n", host);
-
-    if ( is_host_deny(host) ) {
-        WARN("the host %s is deny\n", host);
-        write_on_socket_http_from_buffer(conn->client_fd, HTTP_401_RESPONSE, sizeof(HTTP_401_RESPONSE));
+        write_on_socket_http_from_buffer(conn->client_fd, HTTP_403_RESPONSE, sizeof(HTTP_403_RESPONSE));
         return 1;
     }
 
