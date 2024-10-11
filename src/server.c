@@ -18,7 +18,7 @@
 #include "../includes/logger.h"
 #include "../includes/server_helper.h"
 #include "../includes/http_helper.h"
-#include <arpa/inet.h>
+#include "../includes/dns_helper.h"
 
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
@@ -189,7 +189,7 @@ int handle_http(connection_t* conn) {
         // Creating the server socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd == -1) {
-            ERROR("socket creation failed");
+            ERROR("server socket creation failed");
             return 3;
         }
 
@@ -203,26 +203,17 @@ int handle_http(connection_t* conn) {
         Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
     } else {
         // Else: DNS resolution and connection
-        struct addrinfo hints;
         int status;
         char ipstr[INET6_ADDRSTRLEN];
 
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
-
-        if ((status = getaddrinfo(host, "80", &hints, &res)) != 0) {
-            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-            return 2;
+        if (resolve_dns(host, &res, ipstr) != 0) {
+            return 2; 
         }
-
-        struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
-        void *addr = &(ipv4->sin_addr);
 
         // Creating the socket
         sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
         if (sockfd == -1) {
-            ERROR("socket creation failed");
+            ERROR("dns socket creation failed");
             freeaddrinfo(res);
             return 3;
         }
@@ -234,7 +225,6 @@ int handle_http(connection_t* conn) {
             return 4;
         }
 
-        inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
         INFO("Connected to %s on port 80\n", ipstr);
         Log(LOG_LEVEL_INFO, "Connected to %s on port 80\n", ipstr);
     }
@@ -244,9 +234,6 @@ int handle_http(connection_t* conn) {
         ERROR("Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
         Log(LOG_LEVEL_ERROR, "Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
 
-        if (res != NULL) {
-            freeaddrinfo(res);
-        }
         close(sockfd);
         return 1;
     } else {
@@ -255,10 +242,6 @@ int handle_http(connection_t* conn) {
     }
 
     conn->server_fd = sockfd;
-
-    if (res != NULL) {
-        freeaddrinfo(res);
-    }
 
     INFO("End of handle_http\n");
     return 0;

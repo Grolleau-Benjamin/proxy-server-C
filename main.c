@@ -19,6 +19,7 @@
 #include "includes/server_helper.h"
 #include "includes/logger.h"
 #include "includes/rules.h"
+#include "includes/dns_helper.h"
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +35,7 @@ int main() {
     ERROR("Loading config file failed...\n");
     return EXIT_FAILURE;
   } else {
-    Log(LOG_LEVEL_INFO, "Config have been load correctly!\n");
+    INFO("Config have been load correctly!\n");
   }
   
   if (init_logger(config.logger_filename) != 0) {
@@ -56,6 +57,11 @@ int main() {
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Regex have been init.");
+  }
+
+  if (init_dns_cache() != 0) {
+    ERROR("Init DNS cache failed.\n");
+    return EXIT_FAILURE;
   }
 
   Log(LOG_LEVEL_INFO, "Application start.");
@@ -253,5 +259,6 @@ int main() {
   close(listen_fd);
   close_logger();
   free_rules();
+  free_dns_cache();
   return EXIT_SUCCESS;
 }
