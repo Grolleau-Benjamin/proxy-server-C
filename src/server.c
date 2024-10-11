@@ -27,6 +27,7 @@ int init_listen_socket(const char* address, int port, int max_client) {
   listen_fd = socket(AF_INET, SOCK_STREAM, 0);
   print_error(listen_fd, "socket");
   INFO("Socket created (fd: %d)\n", listen_fd);
+  Log(LOG_LEVEL_INFO, "Socket created (fd: %d)", listen_fd);
   
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(port);
@@ -34,22 +35,32 @@ int init_listen_socket(const char* address, int port, int max_client) {
   ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
   print_error(ret, "bind");
   INFO("Server is bind on %s:%d\n", address, port);
+  Log(LOG_LEVEL_INFO, "Server is bind on %s:%d", address, port);
 
   ret = listen(listen_fd, max_client);
   print_error(ret, "listen");
   INFO("Server is now listening...\n");
+  Log(LOG_LEVEL_INFO, "Server is now listening");
 
   return listen_fd;
 }
 
-// TODO: handle max connection and refuse if more
-int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip) {
+int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip, int max_client, int nb_client) {
     socklen_t addr_len = sizeof(struct sockaddr_in);
+    
+    if (nb_client >= max_client) {
+        INFO("Maximum number of clients reached. Connection refused.\n");
+        return -1;
+    }
+    
     int new_client_fd = accept(listen_fd, (struct sockaddr*)client_addr, &addr_len);
-    print_error(new_client_fd, "accept");
+    if (new_client_fd < 0) {
+        print_error(new_client_fd, "accept");
+        return -1;
+    }
+
     INFO("New connection accepted: fd %d\n", new_client_fd);
 
-    // Get the IPv4 address as a string
     inet_ntop(AF_INET, &(client_addr->sin_addr), client_ip, INET_ADDRSTRLEN);
     INFO("Client IP: %s\n", client_ip);
 
@@ -57,7 +68,7 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* clie
 }
 
 int handle_connection(connection_t* conn) {
-  INFO("Handle connection function\n");
+  INFO("Handling connection...\n");
 
   ssize_t total_bytes_read = 0;
   conn->client_buffer_len = 0;
@@ -72,6 +83,7 @@ int handle_connection(connection_t* conn) {
 
     if (bytes_read == 0) {
       INFO("Client closed the connection.\n");
+      Log(LOG_LEVEL_INFO, "Client %d closed the connection", conn->client_fd);
       return 1;
     }
 
@@ -90,7 +102,9 @@ int handle_connection(connection_t* conn) {
     if (total_bytes_read == BUFFER_SIZE) {
       if (!is_http_method(conn->client_buffer)) {
         WARN("Unknown protocol.\n");
+        Log(LOG_LEVEL_WARN, "Client have write %d bytes and http havn't been recognize...", total_bytes_read);
       } else {
+        Log(LOG_LEVEL_WARN, "This http request is to huge to handle.");
         WARN("Request too large to handle.\n");
       }
       return 1;
@@ -99,7 +113,6 @@ int handle_connection(connection_t* conn) {
   return 0;
 }
 
-// TODO: write HTTP'404 request before return 1 and closing the socket.
 int handle_http(connection_t* conn) {
     INFO("Handle HTTP function\n");
     
@@ -151,13 +164,13 @@ int handle_http(connection_t* conn) {
         INFO("Localhost case handled\n");
     }
 
-    // Si le format IP:Port est valide, on se connecte directement
     if (is_host_https_format(host)) {
         WARN("https format for %s\n", host);
         WARN("Sending a 404 not found\n");
         write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
         return 1;
     }
+    // If the format of host is IP:Port, we don't solve the DNS and connect
     else if (is_ip_port_format(host, &ip, &port)) {
         INFO("is_ip_port_format\n");
         INFO("IP: %s\n\tPort: %s\n", ip, port);
@@ -172,14 +185,13 @@ int handle_http(connection_t* conn) {
             return 1;
         }
 
-        // Création du socket
+        // Creating the server socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd == -1) {
             ERROR("socket creation failed");
             return 3;
         }
 
-        // Connexion directe
         if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
             ERROR("Failed to connect");
             close(sockfd);
@@ -188,26 +200,24 @@ int handle_http(connection_t* conn) {
 
         INFO("Connected to %s on port %s\n", ip, port);
     } else {
-        // Sinon, résolution DNS et connexion
+        // Else: DNS resolution and connection
         struct addrinfo hints;
         int status;
         char ipstr[INET6_ADDRSTRLEN];
 
         memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET;  // Utilisation d'IPv4
-        hints.ai_socktype = SOCK_STREAM;  // Sockets TCP
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
 
-        // Récupération des infos d'adresse pour le hostname, port 80 (HTTP)
         if ((status = getaddrinfo(host, "80", &hints, &res)) != 0) {
             fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
             return 2;
         }
 
-        // Utilisation du premier résultat
         struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
         void *addr = &(ipv4->sin_addr);
 
-        // Création du socket
+        // Creating the socket
         sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
         if (sockfd == -1) {
             ERROR("socket creation failed");
@@ -215,7 +225,6 @@ int handle_http(connection_t* conn) {
             return 3;
         }
 
-        // Connexion au serveur
         if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
             ERROR("Failed to connect");
             close(sockfd);
@@ -227,7 +236,7 @@ int handle_http(connection_t* conn) {
         INFO("Connected to %s on port 80\n", ipstr);
     }
 
-    // Ecriture dans le socket
+    // Writing the client's buffer on socker
     if (write_on_socket_http_from_buffer(sockfd, conn->client_buffer, conn->client_buffer_len) != 0) {
         ERROR("Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
         Log(LOG_LEVEL_ERROR, "Error while writing on the socket to the host %s, IP %s", host, conn->server_ip);
@@ -241,10 +250,8 @@ int handle_http(connection_t* conn) {
         INFO("Writing OK\n");
     }
 
-    // Assignation du socket au serveur
     conn->server_fd = sockfd;
 
-    // Libération des ressources
     if (res != NULL) {
         freeaddrinfo(res);
     }

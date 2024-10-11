@@ -25,31 +25,34 @@
 
 #define CONFIG_FILENAME "conf/proxy.config"
 
-
 int main() {
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
 
   if (init_config(CONFIG_FILENAME) != 0) {
+    ERROR("Loading config file failed...\n");
     return EXIT_FAILURE;
   } else {
-    INFO("Config have been load correctly!\n");
+    Log(LOG_LEVEL_INFO, "Config have been load correctly!\n");
   }
   
   if (init_logger(config.logger_filename) != 0) {
+    ERROR("Loading logger function failed...\n");
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Logger have been correctly initialized!");
   }
 
   if (init_rules(config.rules_filename) != 0) {
+    ERROR("Loading rules failed...\n");
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Rules have been set.");
   }
   
   if (init_regex() != 0) {
+    ERROR("Init regex failed...\n");
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Regex have been init.");
@@ -59,6 +62,7 @@ int main() {
   
   struct sockaddr_in client_addr;
   int listen_fd = init_listen_socket(config.address, config.port, config.max_client);
+  Log(LOG_LEVEL_INFO, "Socket open on fd %d", listen_fd);
 
   struct pollfd fds[config.max_client * 2 + 1];
   connection_t *connections[config.max_client * 2 + 1];
@@ -67,6 +71,7 @@ int main() {
   fds[0].fd = listen_fd;
   fds[0].events = POLLIN;
   INFO("Server's polls are ready!\n");
+  Log(LOG_LEVEL_INFO, "Server polls are ready to run.");
 
   int nfds = 1;
 
@@ -84,7 +89,8 @@ int main() {
       // Refer to: man poll
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)){
         if (i != 0) { // not the listening socket
-          WARN("Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error\n", fds[i].fd);
+          ERROR("Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error\n", fds[i].fd);
+          Log(LOG_LEVEL_ERROR, "Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error", fds[i].fd);
           close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) {
@@ -92,15 +98,15 @@ int main() {
               if (fds[i].fd == connections[i]->client_fd) {
                 INFO("Error on client\n");
                 INFO("Socket server fd: %d\n", connections[i]->server_fd);
-                INFO("fds - 1 (%d): %d\n", i-1, fds[i-1].fd);
-                INFO("fds (%d): %d\n", i, fds[i].fd);
-                INFO("fds + 1 (%d): %d\n", i+1, fds[i+1].fd);
+                Log(LOG_LEVEL_ERROR, "Error on client, socker server fd: %d", connections[i]->server_fd);
               }
             }
             if (connections[i]->server_fd != -1){
               close(connections[i]->server_fd);
               if (fds[i].fd == connections[i]->server_fd) {
                 INFO("Error on server\n");
+                INFO("Socket client fd: %d\n", connections[i]->client_fd);
+                Log(LOG_LEVEL_ERROR, "Error on server, socker client fd: %d", connections[i]->client_fd);
               }
               
             }
@@ -108,7 +114,6 @@ int main() {
           }
           fds[i].fd = -1;
           fds[i].revents = 0;
-          
         }
         continue;
       }
@@ -116,7 +121,8 @@ int main() {
       // Action on the listenning socket => new connection
       if (fds[i].fd == listen_fd && (fds[i].revents & POLLIN) == POLLIN) {
         char client_ip[INET_ADDRSTRLEN];
-        int new_client_fd = accept_connection(listen_fd, &client_addr, client_ip);
+        int new_client_fd = accept_connection(listen_fd, &client_addr, client_ip, config.max_client * 2, nfds);
+        Log(LOG_LEVEL_INFO, "New client connected on socket %d", new_client_fd);
         
         fds[nfds].fd = new_client_fd;
         fds[nfds].events = POLLIN;
@@ -140,6 +146,7 @@ int main() {
 
         if (close_conn) {
           WARN("Clossing connections for %d\n", connections[nfds]->client_fd);
+          Log(LOG_LEVEL_WARN, "Closing connections for %d", connections[nfds]->client_fd);
           close(connections[nfds]->client_fd);
           close(connections[nfds]->server_fd);
           fds[nfds].fd = -1;
@@ -151,23 +158,14 @@ int main() {
 
         INFO("Adding the server fd %d to poll\n", connections[nfds]->server_fd);
         nfds++; // Server fd position
-        INFO("1 - nfds after adding: %d\n", nfds);
-        INFO("Max nfds: %d\n", config.max_client);
-
         connections[nfds] = connections[nfds - 1];
-        INFO("2 - nfds after adding: %d\n", nfds);
         fds[nfds].fd = connections[nfds]->server_fd;
-        INFO("3 - nfds after adding: %d\n", nfds);
         fds[nfds].events = POLLIN;
-        INFO("4 - nfds after adding: %d\n", nfds);
         fds[nfds].revents = 0;
-        INFO("5 - nfds after adding: %d\n", nfds);
-        INFO("fds[%d].fd = %d (server)\n", nfds, connections[nfds]->server_fd);
         INFO("Connected to the server\n");
 
         nfds++; // Next client fd position
       } else {
-        //int close_conn = handle_connection(connections[i]);
         int ret;
         // verify if it's the server or the client or Null
         connection_t *conn = connections[i];
@@ -177,22 +175,18 @@ int main() {
 
         if (fds[i].fd == conn->client_fd && (fds[i].revents & POLLIN)) {
           INFO("Activity on client %d\n", fds[i].fd);
-          // Lecture depuis le client et envoi au serveur
           ssize_t bytes = read(conn->client_fd, conn->client_buffer, sizeof(conn->client_buffer));
           if (bytes <= 0) {
-            // Fermeture de la connexion
-            // TODO Gerer mieux la fermeture et la deconnection
+              INFO("Closing connection on client (%d), no more bits to read\n", conn->client_fd);
             close(conn->client_fd);
             close(conn->server_fd);
-            // connections[i] = NULL;
-            // Retirer les descripteurs du tableau
             fds[i].fd = -1;
             fds[i].revents =0;
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
+            INFO("Connection close\n");
             continue;
           }
-            // Envoyer au serveur
           if (write(conn->server_fd, conn->client_buffer, bytes) < 0) {
             perror("write to server");
             close(conn->client_fd);
@@ -207,22 +201,11 @@ int main() {
 
         if (fds[i].fd == conn->server_fd && (fds[i].revents & POLLIN)) {
           INFO("Activity on server %d\n", fds[i].fd);
-          // Lecture depuis le serveur et envoi au client
           ssize_t bytes = read(conn->server_fd, conn->server_buffer, sizeof(conn->server_buffer));
           if (bytes <= 0) {
               INFO("Closing connection on server (%d), no more bits to read\n", conn->server_fd);
-              // Fermeture de la connexion
-              close(conn->client_fd);                           // TODO: 100% l'erreur est la
-              // voir pour close ailleur ou autrement 
-              INFO("Closed the connection on client: %d\n", conn->client_fd);
+              close(conn->client_fd);
               close(conn->server_fd);
-              INFO("Closed the connection on server: %d\n", conn->server_fd);
-
-              INFO("On server fds\n");
-              INFO("fds[%d] (i - 1) = %d\n", i-1, fds[i-1].fd);
-              INFO("fds[%d] (i) = %d\n", i, fds[i].fd);
-              
-              // Retirer les descripteurs du tableau
               fds[i].fd = -1;
               fds[i].revents = 0;
               fds[i-1].fd = -1;
@@ -231,13 +214,11 @@ int main() {
               INFO("Connection close\n");
               continue;
           }
-          // Envoyer au client
           int ret = write(conn->client_fd, conn->server_buffer, bytes);
           if (ret < 0) {
             perror("write to client");
             close(conn->client_fd);
             close(conn->server_fd);
-            // connections[i] = NULL;
             fds[i].fd = -1;
             fds[i].revents =0;
             fds[i-1].fd = -1;
@@ -245,7 +226,6 @@ int main() {
             continue;
           } else {
             INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
-            INFO("Buffer: %s\n", conn->server_buffer);
           }
         }
       }
