@@ -213,7 +213,6 @@ int handle_http(connection_t* conn) {
         Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
     } else {
         // Else: DNS resolution and connection
-        int status;
         char ipstr[INET6_ADDRSTRLEN];
 
         if (resolve_dns(host, &res, ipstr) != 0) {
