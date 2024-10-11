@@ -49,7 +49,7 @@ int init_rules(const char* filename) {
 
   FILE* file = fopen(filename, "r");
   if (!file) {
-    print_error(-1, "Rules file not found");
+    ERROR("Rules file not found");
     return -1;
   }
 

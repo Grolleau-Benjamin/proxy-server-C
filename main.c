@@ -40,6 +40,7 @@ int main() {
   
   if (init_logger(config.logger_filename) != 0) {
     ERROR("Loading logger function failed...\n");
+    close_logger();
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Logger have been correctly initialized!");
@@ -47,6 +48,8 @@ int main() {
 
   if (init_rules(config.rules_filename) != 0) {
     ERROR("Loading rules failed...\n");
+    close_logger();
+    free_rules();
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Rules have been set.");
@@ -54,6 +57,9 @@ int main() {
   
   if (init_regex() != 0) {
     ERROR("Init regex failed...\n");
+    close_logger();
+    free_rules();
+    free_regex();
     return EXIT_FAILURE;
   } else {
     Log(LOG_LEVEL_INFO, "Regex have been init.");
@@ -61,6 +67,9 @@ int main() {
 
   if (init_dns_cache() != 0) {
     ERROR("Init DNS cache failed.\n");
+    close_logger();
+    free_rules();
+    free_regex();
     return EXIT_FAILURE;
   }
 
@@ -68,6 +77,14 @@ int main() {
   
   struct sockaddr_in client_addr;
   int listen_fd = init_listen_socket(config.address, config.port, config.max_client);
+  if (listen_fd < 0) {
+    ERROR("Error while creating the proxy socket\n");
+    close_logger();
+    free_rules();
+    free_regex();
+    free_dns_cache();
+    exit(EXIT_FAILURE);
+  }
   Log(LOG_LEVEL_INFO, "Socket open on fd %d", listen_fd);
 
   struct pollfd fds[config.max_client * 2 + 1];

@@ -19,13 +19,17 @@
 #include "../includes/server_helper.h"
 #include "../includes/http_helper.h"
 #include "../includes/dns_helper.h"
+#include <stdio.h>
 
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
   struct sockaddr_in server_addr;
   
   listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-  print_error(listen_fd, "socket");
+  if (listen_fd < 0) {
+      ERROR("ERROR while creating socket\n");
+      return -1;
+  }
   INFO("Socket created (fd: %d)\n", listen_fd);
   Log(LOG_LEVEL_INFO, "Socket created (fd: %d)", listen_fd);
   
@@ -33,12 +37,18 @@ int init_listen_socket(const char* address, int port, int max_client) {
   server_addr.sin_port = htons(port);
   inet_aton(address, &server_addr.sin_addr);
   ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
-  print_error(ret, "bind");
+  if (ret < 0) {
+      perror("bind");
+      return -1;
+  }
   INFO("Server is bind on %s:%d\n", address, port);
   Log(LOG_LEVEL_INFO, "Server is bind on %s:%d", address, port);
 
   ret = listen(listen_fd, max_client);
-  print_error(ret, "listen");
+  if (ret < 0) {
+      perror("listen");
+      return -1;
+  }
   INFO("Server is now listening...\n");
   Log(LOG_LEVEL_INFO, "Server is now listening");
 
