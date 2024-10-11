@@ -60,6 +60,7 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* clie
     }
 
     INFO("New connection accepted: fd %d\n", new_client_fd);
+    Log(LOG_LEVEL_INFO, "New client connection accepted: fd %d", new_client_fd);
 
     inet_ntop(AF_INET, &(client_addr->sin_addr), client_ip, INET_ADDRSTRLEN);
     INFO("Client IP: %s\n", client_ip);
@@ -199,6 +200,7 @@ int handle_http(connection_t* conn) {
         }
 
         INFO("Connected to %s on port %s\n", ip, port);
+        Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
     } else {
         // Else: DNS resolution and connection
         struct addrinfo hints;
@@ -234,6 +236,7 @@ int handle_http(connection_t* conn) {
 
         inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
         INFO("Connected to %s on port 80\n", ipstr);
+        Log(LOG_LEVEL_INFO, "Connected to %s on port 80\n", ipstr);
     }
 
     // Writing the client's buffer on socker
@@ -248,6 +251,7 @@ int handle_http(connection_t* conn) {
         return 1;
     } else {
         INFO("Writing OK\n");
+        Log(LOG_LEVEL_INFO, "Client %d have write %d bytes to server", conn->client_fd, conn->client_buffer_len);
     }
 
     conn->server_fd = sockfd;

@@ -177,7 +177,8 @@ int main() {
           INFO("Activity on client %d\n", fds[i].fd);
           ssize_t bytes = read(conn->client_fd, conn->client_buffer, sizeof(conn->client_buffer));
           if (bytes <= 0) {
-              INFO("Closing connection on client (%d), no more bits to read\n", conn->client_fd);
+            INFO("Closing connection on client (%d), no more bits to read\n", conn->client_fd);
+            Log(LOG_LEVEL_INFO, "Closing connection on client (%d), no more bits to read", conn->client_fd);
             close(conn->client_fd);
             close(conn->server_fd);
             fds[i].fd = -1;
@@ -204,6 +205,7 @@ int main() {
           ssize_t bytes = read(conn->server_fd, conn->server_buffer, sizeof(conn->server_buffer));
           if (bytes <= 0) {
               INFO("Closing connection on server (%d), no more bits to read\n", conn->server_fd);
+              Log(LOG_LEVEL_INFO, "Closing connection on server (%d), no more bits to read", conn->server_fd);
               close(conn->client_fd);
               close(conn->server_fd);
               fds[i].fd = -1;
@@ -226,6 +228,7 @@ int main() {
             continue;
           } else {
             INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
+            Log(LOG_LEVEL_INFO, "Write %d bytes to client %d from %d", ret, conn->client_fd, conn->server_fd);
           }
         }
       }
