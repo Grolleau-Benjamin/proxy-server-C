@@ -49,7 +49,7 @@ int init_rules(const char* filename) {
 
   FILE* file = fopen(filename, "r");
   if (!file) {
-    print_error(-1, "Rules file not found");
+    ERROR("Rules file not found");
     return -1;
   }
 
@@ -129,9 +129,10 @@ void free_rules() {
 
 int is_host_deny(const char* host) {
   for (int i = 0; i < rules.nb_rules; i++) {
-    // INFO("nb domain : %d\n",  (int)rules.rules[i].domain_count);
     for (int j = 0; j < rules.rules[i].domain_count; j++) {
-      if (host == rules.rules[i].ban_domain_list[j]) return 1;
+      if ( strcmp(host, rules.rules[i].ban_domain_list[j]) == 0) {
+        return 1;
+      }
     }
   }
   return 0;

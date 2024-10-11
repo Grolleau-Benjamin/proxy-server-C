@@ -28,7 +28,7 @@ typedef struct {
 } connection_t;
 
 int init_listen_socket(const char* address, int port, int max_client);
-int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip);
+int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip, int max_client, int nb_client);
 int handle_connection(connection_t* conn);
 int handle_http(connection_t* conn);
 

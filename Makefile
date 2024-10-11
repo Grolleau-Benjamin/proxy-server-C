@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Iincludes
 CFLAGS_DEBUG = -DDEBUG -g
 
-SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c src/server_helper.c
+SRCS = main.c src/utils.c src/server.c src/http_helper.c src/logger.c src/rules.c src/config.c src/server_helper.c src/dns_helper.c
 
 OBJS = $(SRCS:src/%.c=obj/%.o)
 OBJS := $(OBJS:main.c=obj/main.o)  

@@ -8,6 +8,25 @@
                         "Content-Length: 13\r\n" \
                         "\r\n" \
                         "<h1>404</h1>"
+
+#define HTTP_401_RESPONSE "HTTP/1.1 401 Unauthorized\r\n"  \
+                        "Date: Wed, 09 Oct 2024 15:34:48 GMT\r\n" \
+                        "Server: Apache/2.4.41 (Ubuntu)\r\n" \
+                        "WWW-Authenticate: Basic realm=\"Access to the site\"\r\n"  \
+                        "Content-Type: text/html; charset=UTF-8\r\n" \
+                        "Content-Length: 345\r\n" \
+                        "Connection: close\r\n" \
+                        "\r\n" \
+                        "<html>\r\n" \
+                        "<head>\r\n" \
+                        "    <title>401 Unauthorized</title>\r\n" \
+                        "</head>\r\n" \
+                        "<body>\r\n" \
+                        "    <h1>Unauthorized</h1>\r\n" \
+                        "    <p>Authentication is required to access this resource. </p>\r\n" \
+                        "</body>\r\n" \
+                        "</html>\r\n"
+                        
                  
 #define HTTP_403_RESPONSE "HTTP/1.1 403 Forbidden\r\n" \
         "Date: Wed, 09 Oct 2024 15:34:48 GMT\r\n" \
