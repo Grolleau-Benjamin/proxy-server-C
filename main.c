@@ -35,6 +35,8 @@ void handle_signal(int signal) {
 }
 
 int main() {
+
+  
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
@@ -152,7 +154,9 @@ int main() {
                 INFO("Socket server fd: %d\n", connections[i]->server_fd);
                 Log(LOG_LEVEL_ERROR, "Error on client, socker server fd: %d", connections[i]->server_fd);
               }
+              connections[i]->client_fd = -1;
             }
+
             if (connections[i]->server_fd != -1){
               close(connections[i]->server_fd);
               if (fds[i].fd == connections[i]->server_fd) {
@@ -160,7 +164,7 @@ int main() {
                 INFO("Socket client fd: %d\n", connections[i]->client_fd);
                 Log(LOG_LEVEL_ERROR, "Error on server, socker client fd: %d", connections[i]->client_fd);
               }
-              
+              connections[i]->server_fd = -1;
             }
             free(connections[i]);
           }
@@ -181,7 +185,7 @@ int main() {
 
         connections[nfds] = malloc(sizeof(connection_t));
         if (connections[nfds] == NULL) {
-          perror("malloc");
+          ERROR("malloc\n");
           close(new_client_fd);
           fds[nfds].fd = -1;
           fds[nfds].events = 0;
@@ -194,6 +198,7 @@ int main() {
         connections[nfds]->server_buffer_len = 0;
         strcpy(connections[nfds]->client_ip, client_ip);
         memset(connections[nfds]->server_ip, 0, sizeof(connections[nfds]->server_ip));
+        memset(connections[nfds]->client_buffer, 0, sizeof(connections[nfds]->client_buffer));
         int close_conn = handle_connection(connections[nfds]);
 
         if (close_conn) {
@@ -202,7 +207,6 @@ int main() {
           close(connections[nfds]->client_fd);
           close(connections[nfds]->server_fd);
           fds[nfds].fd = -1;
-          fds[nfds].events = 0;
           fds[nfds].revents = 0;
           free(connections[nfds]);
           continue;
@@ -237,17 +241,19 @@ int main() {
             fds[i].revents =0;
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
+            free(connections[i]);
             INFO("Connection close\n");
             continue;
           }
           if (write(conn->server_fd, conn->client_buffer, bytes) < 0) {
-            perror("write to server");
+            ERROR("write to server\n");
             close(conn->client_fd);
             close(conn->server_fd);
             fds[i].fd = -1;
             fds[i].revents =0;
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
+            free(connections[i]);
             continue;
           }
         }
@@ -264,19 +270,21 @@ int main() {
               fds[i].revents = 0;
               fds[i-1].fd = -1;
               fds[i-1].revents = 0;
-
+              free(connections[i]);
               INFO("Connection close\n");
               continue;
           }
           int ret = write(conn->client_fd, conn->server_buffer, bytes);
           if (ret < 0) {
-            perror("write to client");
+            ERROR("write to client\n");
+
             close(conn->client_fd);
             close(conn->server_fd);
             fds[i].fd = -1;
             fds[i].revents =0;
             fds[i-1].fd = -1;
             fds[i-1].revents = 0;
+            free(connections[i]);
             continue;
           } else {
             INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);

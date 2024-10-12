@@ -19,6 +19,7 @@
 #include "../includes/server_helper.h"
 #include "../includes/http_helper.h"
 #include "../includes/dns_helper.h"
+#include "../includes/rules.h"
 #include <stdio.h>
 
 int init_listen_socket(const char* address, int port, int max_client) {
@@ -143,6 +144,28 @@ int handle_http(connection_t* conn) {
 
     Log(LOG_LEVEL_INFO, "%s asked for %s", conn->client_ip, host);
 
+    INFO("Checking if host '%s's is allowed ...\n", host);
+
+    if ( is_host_deny(host) ) {
+        WARN("the host %s is deny\n", host);
+        write_on_socket_http_from_buffer(conn->client_fd, HTTP_403_RESPONSE, sizeof(HTTP_403_RESPONSE));
+        return 1;
+    }
+
+    INFO("the host is allowed !\n");
+
+    Log(LOG_LEVEL_INFO, "Checking if the host %s is allowed", host);
+    INFO("Checking if the host %s is allowed\n", host);
+
+    if (is_host_deny(host)) {
+        Log(LOG_LEVEL_WARN, "The host %s is denied", host);
+        WARN("%s is deny by the bocklist\n", host);
+        INFO("Sending HTTP 403 Forbiden\n");
+        write_on_socket_http_from_buffer(conn->client_fd, HTTP_403_RESPONSE, sizeof(HTTP_403_RESPONSE));
+        return 1;
+    };
+
+    Log(LOG_LEVEL_INFO, "The host %s is allowed", host);
     char* ip = NULL;
     char* port = NULL;
     int sockfd = -1;
