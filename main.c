@@ -23,13 +23,23 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <signal.h>
 
 #define CONFIG_FILENAME "conf/proxy.config"
+
+// volatile because the value can change at any time (https://barrgroup.com/blog/how-use-cs-volatile-keyword)
+volatile int running = 1;
+void handle_signal(int signal) {
+  running = 0;
+}
 
 int main() {
   INFO("Test info\n");     // TODO: Delete
   WARN("Test warn\n");     // TODO: Delete
   ERROR("Test error\n");   // TODO: Delete
+
+  signal(SIGINT, handle_signal);
 
   if (init_config(CONFIG_FILENAME) != 0) {
     ERROR("Loading config file failed...\n");
@@ -98,10 +108,29 @@ int main() {
 
   int nfds = 1;
 
-  while (1) {
+  while (running) {
     int activity = poll(fds, nfds, -1);
     INFO("Activity: %d\n", activity);
-    print_error(activity, "poll");
+    if (activity < 0) {
+      if (errno == EINTR) {
+        if (!running) {
+          WARN("CTRL+C was pressed, the program is closing\n");
+          INFO("Exiting main loop\n");
+          break;
+        } else {
+          // Poll was interrupted but we're still running
+          continue;
+        }
+      } else {
+        perror("poll");
+        break; // Handle other errors appropriately
+      }
+    }
+
+    if (!running) {
+      INFO("Exiting main loop\n");
+      break;
+    }
 
     for (int i = 0; i < nfds; i++) {
       // If there is no events detected, juste skip the loop and go to next i
@@ -258,24 +287,53 @@ int main() {
     }
 
     // cleaning closed descriptors after each iteration to handle bug
+    // Clean up closed descriptors and adjust the fds and connections arrays
     int new_nfds = 0;
-    for(int i =0; i < nfds; i++) {
+    for (int i = 0; i < nfds; i++) {
       if (fds[i].fd != -1) {
         if (i != new_nfds) {
           fds[new_nfds] = fds[i];
           connections[new_nfds] = connections[i];
+        }
+        new_nfds++;
+      } else {
+        if (connections[i]) {
+          free(connections[i]);
           connections[i] = NULL;
         }
-        new_nfds ++;
       }
     }
     nfds = new_nfds;
-    WARN("nfds: %d\n", nfds);
+
   }
+
+  INFO("Closing all connections and cleaning up...\n");
+  // Close all client and server connections
+  for (int i = 0; i < nfds; i++) {
+    if (fds[i].fd != -1) {
+      close(fds[i].fd);
+      fds[i].fd = -1;
+      if (connections[i]) {
+        if (connections[i]->client_fd != -1) {
+          close(connections[i]->client_fd);
+          connections[i]->client_fd = -1;
+        }
+        if (connections[i]->server_fd != -1) {
+          close(connections[i]->server_fd);
+          connections[i]->server_fd = -1;
+        }
+        free(connections[i]);
+        connections[i] = NULL;
+      }
+    }
+  }
+
   
   close(listen_fd);
   close_logger();
   free_rules();
+  free_regex();
   free_dns_cache();
+  INFO("Shutdown complete.\n");
   return EXIT_SUCCESS;
 }
