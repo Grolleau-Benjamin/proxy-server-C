@@ -61,7 +61,7 @@ void close_logger() {
   if (log_file != NULL) {
     fclose(log_file);
     log_file = NULL;
-    INFO("Log file is close");
+    INFO("Log file is close\n");
   }
 }
 

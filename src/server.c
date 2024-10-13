@@ -101,6 +101,11 @@ int handle_connection(connection_t* conn) {
 
     total_bytes_read += bytes_read;
     conn->client_buffer_len = total_bytes_read;
+    if (conn->client_buffer_len < sizeof(conn->client_buffer)) {
+      conn->client_buffer[conn->client_buffer_len] = '\0';
+    } else {
+      conn->client_buffer[sizeof(conn->client_buffer) - 1] = '\0';
+    }
     
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       int ret = handle_http(conn);
@@ -223,6 +228,11 @@ int handle_http(connection_t* conn) {
 
         INFO("Connected to %s on port %s\n", ip, port);
         Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
+
+        strncpy(conn->server_ip, ip, sizeof(conn->server_ip) - 1);
+        conn->server_ip[sizeof(conn->server_ip) - 1] = '\0';
+        free(ip);
+        free(port);
     } else {
         // Else: DNS resolution and connection
         char ipstr[INET6_ADDRSTRLEN];
@@ -248,6 +258,9 @@ int handle_http(connection_t* conn) {
 
         INFO("Connected to %s on port 80\n", ipstr);
         Log(LOG_LEVEL_INFO, "Connected to %s on port 80\n", ipstr);
+
+        strncpy(conn->server_ip, ipstr, sizeof(conn->server_ip) - 1);
+        conn->server_ip[sizeof(conn->server_ip) - 1] = '\0';
     }
 
     // Writing the client's buffer on socker

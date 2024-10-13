@@ -53,6 +53,9 @@ void free_regex() {
 }
 
 int is_ip_port_format(const char *host, char **ip, char **port) {
+  *ip = NULL;
+  *port = NULL;
+
   if (!regex_compiled) {
     ERROR("Regex is not compiled. Call init_regex() before.\n");
     print_error(-1, "regex_not_compiled");
