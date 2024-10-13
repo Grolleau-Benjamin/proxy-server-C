@@ -128,8 +128,8 @@ void free_rules() {
 }
 
 int is_host_deny(const char* host) {
-  for (int i = 0; i < rules.nb_rules; i++) {
-    for (int j = 0; j < rules.rules[i].domain_count; j++) {
+  for (size_t i = 0; i < rules.nb_rules; i++) {
+    for (size_t j = 0; j < rules.rules[i].domain_count; j++) {
       if ( strcmp(host, rules.rules[i].ban_domain_list[j]) == 0) {
         return 1;
       }
