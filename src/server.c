@@ -55,6 +55,9 @@ int init_listen_socket(const char* address, int port, int max_client) {
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(port);
   inet_aton(address, &server_addr.sin_addr);
+  int option = 1;
+  ret = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+  INFO("setsockopt ret : %d\n", ret);
   ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
   if (ret < 0) {
       ERROR("ERROR when binding the listen fd\n");

@@ -336,12 +336,12 @@ int main() {
           close(connections[i]->server_fd);
           connections[i]->server_fd = -1;
         }
-        free(connections[i]);
+        // free(connections[i]);
         connections[i] = NULL;
         connections[i+1] = NULL;
       }
   }
-  
+
   close(listen_fd);
   close_logger();
   free_rules();
