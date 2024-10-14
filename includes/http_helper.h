@@ -19,10 +19,16 @@
  * The response includes a content type of "text/html" and a minimal HTML body displaying "404".
  */
 #define HTTP_404_RESPONSE "HTTP/1.1 404 Not Found\r\n" \
-                        "Content-Type: text/html\r\n" \
-                        "Content-Length: 13\r\n" \
-                        "\r\n" \
-                        "<h1>404</h1>"
+                          "Content-Type: text/html\r\n" \
+                          "Content-Length: 172\r\n" \
+                          "\r\n" \
+                          "<html>\r\n" \
+                          "<head><title>404 Not Found</title></head>\r\n" \
+                          "<body>\r\n" \
+                          "    <h1>404 Not Found</h1>\r\n" \
+                          "    <p>The resource you are looking for was not found on this proxy.</p>\r\n" \
+                          "</body>\r\n" \
+                          "</html>\r\n"
 
 /**
  * @brief HTTP 403 Forbidden response.
@@ -32,20 +38,20 @@
  * type, content type, and an HTML body with a message informing the client about the restriction.
  */                 
 #define HTTP_403_RESPONSE "HTTP/1.1 403 Forbidden\r\n" \
-        "Server: Apache/2.4.41 (Ubuntu)\r\n" \
-        "Content-Type: text/html; charset=UTF-8\r\n" \
-        "Content-Length: 345\r\n" \
-        "Connection: close\r\n" \
-        "\r\n" \
-        "<html>\r\n" \
-        "<head>\r\n" \
-        "    <title>403 Forbidden</title>\r\n" \
-        "</head>\r\n" \
-        "<body>\r\n" \
-        "    <h1>Forbidden</h1>\r\n" \
-        "    <p>You don't have permission to access this resource.</p>\r\n" \
-        "</body>\r\n" \
-        "</html>\r\n" 
+                          "Content-Type: text/html; charset=UTF-8\r\n" \
+                          "Content-Length: 300\r\n" \
+                          "Connection: close\r\n" \
+                          "\r\n" \
+                          "<html>\r\n" \
+                          "<head>\r\n" \
+                          "    <title>403 Forbidden</title>\r\n" \
+                          "</head>\r\n" \
+                          "<body>\r\n" \
+                          "    <h1>403 Forbidden</h1>\r\n" \
+                          "    <p>Your access to this resource has been blocked or you are not authorized to access it via this proxy.</p>\r\n" \
+                          "    <p>If you believe this is an error, please contact your network administrator.</p>\r\n" \
+                          "</body>\r\n" \
+                          "</html>\r\n"
 
 /**
  * @file http_helper.h
