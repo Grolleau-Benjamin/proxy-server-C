@@ -56,7 +56,7 @@ int init_listen_socket(const char* address, int port, int max_client) {
   inet_aton(address, &server_addr.sin_addr);
   ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
   if (ret < 0) {
-      ERROR("ERROR when binding the listen fd");
+      ERROR("ERROR when binding the listen fd\n");
       Log(LOG_LEVEL_ERROR, "ERROR when binding the listen fd");
       return -1;
   }
