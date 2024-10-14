@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2024
+ * Benjamin Grolleau
+ * Alexis Carle
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction.
+ * 
+ * See the LICENSE file for the full license text.
+ */
+
+/**
+ * @file server_helper.c
+ * @brief Helper functions for server operations, including regex handling, socket reading/writing, and HTTP request processing.
+ *
+ * This file contains various utility functions to assist with server-side tasks such as
+ * initializing and freeing regular expressions, identifying valid IP:Port or HTTPS formats, 
+ * and handling read/write operations on sockets.
+ */
+ 
 #include "../includes/server_helper.h"
 #include "../includes/utils.h"
 #include "../includes/logger.h"
@@ -7,10 +30,37 @@
 #include <string.h>
 #include <unistd.h>
 
+/**
+ * @brief Compiled regular expression for matching IP:Port format.
+ * 
+ * This regex is used to verify if a given host string follows the valid IP:Port format.
+ */
 static regex_t ip_port_regex;
+
+/**
+ * @brief Compiled regular expression for matching HTTPS host format.
+ * 
+ * This regex is used to verify if a given host string follows the HTTPS format (domain:443).
+ */
 static regex_t https_regex;
+
+/**
+ * @brief Flag to indicate whether the regular expressions are compiled.
+ * 
+ * This variable is used to ensure that the regular expressions for IP:Port 
+ * and HTTPS format are compiled before they are used in matching operations.
+ */
 static int regex_compiled = 0;
 
+/**
+ * @brief Initializes the regular expressions for IP:Port and HTTPS format.
+ * 
+ * This function compiles two regular expressions, one for matching the IP:Port format
+ * and another for matching the HTTPS format (domain:443). It sets the flag to indicate
+ * that the regex patterns are ready to be used.
+ * 
+ * @return 0 on success, or 1 if an error occurs during regex compilation.
+ */
 int init_regex() {
   const char* ip_port_pattern = 
     "^((25[0-5]|"                                 // from 250 to 255
@@ -43,6 +93,12 @@ int init_regex() {
   return 0;
 }
 
+/**
+ * @brief Frees the compiled regular expressions.
+ * 
+ * This function releases the memory associated with the compiled regular expressions
+ * for IP:Port and HTTPS format, and resets the flag indicating that the regex is compiled.
+ */
 void free_regex() {
   if (regex_compiled) {
     regfree(&ip_port_regex);
@@ -51,6 +107,18 @@ void free_regex() {
   }
 }
 
+/**
+ * @brief Checks if the given host matches the IP:Port format.
+ * 
+ * This function checks whether the provided host string follows the IP:Port format.
+ * If it does, it extracts the IP and port values from the host string.
+ * 
+ * @param host The host string to check.
+ * @param ip Pointer to store the extracted IP address.
+ * @param port Pointer to store the extracted port number.
+ * 
+ * @return 1 if the host is in IP:Port format, 0 otherwise.
+ */
 int is_ip_port_format(const char *host, char **ip, char **port) {
   *ip = NULL;
   *port = NULL;
@@ -71,6 +139,15 @@ int is_ip_port_format(const char *host, char **ip, char **port) {
   return 0;
 }
 
+/**
+ * @brief Checks if the given host matches the HTTPS format.
+ * 
+ * This function checks whether the provided host string follows the HTTPS format (domain:443).
+ * 
+ * @param host The host string to check.
+ * 
+ * @return 1 if the host is in HTTPS format, 0 otherwise.
+ */
 int is_host_https_format(const char* host) {
   if (!regex_compiled) {
     ERROR("Regex is not compiled. Call init_regex() before.\n");
@@ -83,6 +160,16 @@ int is_host_https_format(const char* host) {
   return 0;
 }
 
+/**
+ * @brief Replaces "localhost" with "127.0.0.1" in a host string.
+ * 
+ * This function searches for "localhost" in the provided host string and replaces it
+ * with the IP address "127.0.0.1". It also preserves the port if specified in the string.
+ * 
+ * @param host The host string to modify.
+ * 
+ * @return 1 if the replacement was successful, 0 otherwise.
+ */
 int replace_localhost_with_ip(char* host) {
     const char* localhost = "localhost";
     const char* localhost_ip = "127.0.0.1";
@@ -98,6 +185,19 @@ int replace_localhost_with_ip(char* host) {
     }
     return 0;
 }
+
+/**
+ * @brief Writes data from a buffer to a socket.
+ * 
+ * This function writes the content of the buffer to the specified socket file descriptor
+ * until all data has been sent. It handles partial sends by looping until the buffer is fully written.
+ * 
+ * @param fd The file descriptor of the socket to write to.
+ * @param buffer The buffer containing the data to send.
+ * @param buffer_len The length of the buffer in bytes.
+ * 
+ * @return 0 on success, or 1 if an error occurs during writing.
+ */
 int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
     INFO("Writing on the fd %d ...\n", fd);
     int total_sent = 0;
@@ -116,6 +216,18 @@ int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
     return 0;
 }
 
+/**
+ * @brief Reads data from a socket into a buffer.
+ * 
+ * This function reads data from the specified socket file descriptor into the provided buffer
+ * until either the end of the HTTP headers ("\r\n\r\n") is detected or the buffer is full.
+ * 
+ * @param fd The file descriptor of the socket to read from.
+ * @param buffer The buffer to store the received data.
+ * @param buffer_size The size of the buffer in bytes.
+ * 
+ * @return The total number of bytes read, or -1 if an error occurs.
+ */
 int read_on_socket_http(int fd, char* buffer, int buffer_size) {
   INFO("Reading from the socket of fd %d\n", fd);
   int total_bytes_read = 0;

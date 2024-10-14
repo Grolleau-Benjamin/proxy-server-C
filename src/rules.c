@@ -129,6 +129,12 @@ void free_rules() {
   rules.nb_rules = 0;
 }
 
+/**
+ * @brief Returns 0 or 1 depending on whether the given host is denied.
+ *
+ * This function checks each host included in the rule set and returns
+ * a boolean indicating whether the host is denied (1) or not (0).
+ */
 int is_host_deny(const char* host) {
   for (size_t i = 0; i < rules.nb_rules; i++) {
     for (size_t j = 0; j < rules.rules[i].domain_count; j++) {
