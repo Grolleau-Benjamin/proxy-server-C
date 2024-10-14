@@ -313,19 +313,14 @@ int main() {
         if (i != new_nfds) {
           fds[new_nfds] = fds[i];
           connections[new_nfds] = connections[i];
-        }
-        new_nfds++;
-      } else {
-        if (connections[i]) {
-          // free(connections[i]);
           connections[i] = NULL;
         }
+        new_nfds++;
       }
     }
     nfds = new_nfds;
   }
 
-  INFO("Closing all connections and cleaning up...\n");
   // Close all client and server connections
   for (int i = 1; i < config.max_client * 2 + 1 ; i += 2) {
       if (connections[i] != NULL) {
@@ -337,8 +332,7 @@ int main() {
           close(connections[i]->server_fd);
           connections[i]->server_fd = -1;
         }
-        // INFO("\n",);
-        // free(connections[i]);
+        free(connections[i]);
         connections[i] = NULL;
         connections[i+1] = NULL;
       }
