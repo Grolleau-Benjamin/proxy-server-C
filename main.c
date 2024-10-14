@@ -316,7 +316,7 @@ int main() {
         new_nfds++;
       } else {
         if (connections[i]) {
-          free(connections[i]);
+          //free(connections[i]);
           connections[i] = NULL;
         }
       }
