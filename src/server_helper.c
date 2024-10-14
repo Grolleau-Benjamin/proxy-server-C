@@ -207,7 +207,7 @@ int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
         INFO("write %d bytes\n", temp_send);
         if (temp_send == -1) {
             ERROR("write on server socket");
-            Log(LOG_LEVEL_ERROR, "Error while writing on server socket");
+            Log(LOG_LEVEL_ERROR, "[SERVER] Error while writing on server socket");
             return 1;
         }
         total_sent += temp_send;

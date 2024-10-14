@@ -65,7 +65,7 @@ int main() {
     close_logger();
     return EXIT_FAILURE;
   } else {
-    Log(LOG_LEVEL_INFO, "Logger have been correctly initialized!");
+    Log(LOG_LEVEL_INFO, "[LOGGER] Logger have been correctly initialized");
   }
 
   if (init_rules(config.rules_filename) != 0) {
@@ -74,7 +74,7 @@ int main() {
     free_rules();
     return EXIT_FAILURE;
   } else {
-    Log(LOG_LEVEL_INFO, "Rules have been set.");
+    Log(LOG_LEVEL_INFO, "[CONFIG] Rules have been set.");
   }
   
   if (init_regex() != 0) {
@@ -84,7 +84,7 @@ int main() {
     free_regex();
     return EXIT_FAILURE;
   } else {
-    Log(LOG_LEVEL_INFO, "Regex have been init.");
+    Log(LOG_LEVEL_INFO, "[CONFIG] Regex have been init.");
   }
 
   if (init_dns_cache() != 0) {
@@ -93,9 +93,11 @@ int main() {
     free_rules();
     free_regex();
     return EXIT_FAILURE;
+  } else {
+    Log(LOG_LEVEL_INFO, "[CONFIG] DNS cache have been init.");
   }
 
-  Log(LOG_LEVEL_INFO, "Application start.");
+  Log(LOG_LEVEL_INFO, "[SERVER] server starting....");
   
   struct sockaddr_in client_addr;
   int listen_fd = init_listen_socket(config.address, config.port, config.max_client);
@@ -107,7 +109,7 @@ int main() {
     free_dns_cache();
     exit(EXIT_FAILURE);
   }
-  Log(LOG_LEVEL_INFO, "Socket open on fd %d", listen_fd);
+  Log(LOG_LEVEL_INFO, "[SERVER] Socket open on fd %d", listen_fd);
 
   struct pollfd fds[config.max_client * 2 + 1];
   connection_t *connections[config.max_client * 2 + 1];
@@ -116,7 +118,7 @@ int main() {
   fds[0].fd = listen_fd;
   fds[0].events = POLLIN;
   INFO("Server's polls are ready!\n");
-  Log(LOG_LEVEL_INFO, "Server polls are ready to run.");
+  Log(LOG_LEVEL_INFO, "[SERVER] Server polls are ready to run.");
 
   int nfds = 1;
 
@@ -298,7 +300,6 @@ int main() {
             continue;
           } else {
             INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
-            Log(LOG_LEVEL_INFO, "Write %d bytes to client %d from %d", ret, conn->client_fd, conn->server_fd);
           }
         }
       }
@@ -336,6 +337,7 @@ int main() {
           close(connections[i]->server_fd);
           connections[i]->server_fd = -1;
         }
+        // INFO("\n",);
         // free(connections[i]);
         connections[i] = NULL;
         connections[i+1] = NULL;

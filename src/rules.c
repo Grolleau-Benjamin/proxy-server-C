@@ -140,7 +140,7 @@ int is_host_deny(const char* host) {
     for (size_t j = 0; j < rules.rules[i].domain_count; j++) {
       if ( strcmp(host, rules.rules[i].ban_domain_list[j]) == 0) {
         WARN("Domain '%s' is banned from the category '%s'\n", rules.rules[i].ban_domain_list[j], rules.rules[i].name );
-        Log(LOG_LEVEL_WARN, "Domain %s banned from category : %s", rules.rules[i].ban_domain_list[j], rules.rules[i].name);
+        Log(LOG_LEVEL_WARN, "[RULES] Domain %s banned from category : %s", rules.rules[i].ban_domain_list[j], rules.rules[i].name);
         return 1;
       }
     }

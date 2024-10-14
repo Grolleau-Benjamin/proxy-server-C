@@ -126,7 +126,7 @@ int get_http_host(const char* buffer, char* host, size_t host_size) {
         return 0;
       } else {
         WARN("Hostname too long\n");
-        Log(LOG_LEVEL_WARN, "Hostname too long");
+        Log(LOG_LEVEL_WARN, "[SERVER] Hostname too long");
         return -1;
       }
     } else {

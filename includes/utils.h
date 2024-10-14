@@ -64,6 +64,4 @@
   #define ERROR(fmt, ...) do { } while (0)
 #endif
 
-void print_error(int result, char* s);
-
 #endif

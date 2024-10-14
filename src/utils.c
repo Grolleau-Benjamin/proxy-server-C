@@ -21,20 +21,3 @@
  */
 
 #include "../includes/utils.h"
-
-/**
- * @brief Prints an error message and exits the program if the result is negative.
- * 
- * This function checks the result of a system call or other operation, and if the result
- * is negative, it prints the error message (associated with the string `s`) using `perror()`
- * and terminates the program with `EXIT_FAILURE`.
- * 
- * @param result The result of an operation to check (usually the return value of a function).
- * @param s A string describing the error (used in `perror()`).
- */
-void print_error(int result, char* s) {
-  if (result < 0) {
-    perror(s);
-    exit(EXIT_FAILURE);
-  }
-}

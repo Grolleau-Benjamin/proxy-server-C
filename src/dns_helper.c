@@ -118,7 +118,7 @@ int add_in_cache(const char* host, const char* ipstr, struct addrinfo* addr_info
     dns_cache_entry_t *new_entry = malloc(sizeof(dns_cache_entry_t));
     if (!new_entry) {
         ERROR("Failed to allocate memory for DNS cache entry.\n");
-        Log(LOG_LEVEL_ERROR, "Failed to allocate memory for DNS cache entry");
+        Log(LOG_LEVEL_ERROR, "[DNS CACHE] Failed to allocate memory for DNS cache entry");
         return -1;
     }
 
@@ -241,7 +241,7 @@ int resolve_dns(const char* host, struct addrinfo** res, char* ipstr) {
 
     if (add_in_cache(host, ipstr, *res) != 0) {
         ERROR("Failed to add DNS resolution to cache.\n");
-        Log(LOG_LEVEL_ERROR, "DNS cache failled to add DNS resolution");
+        Log(LOG_LEVEL_ERROR, "[DNS CACHE] failled to add DNS resolution");
     }
 
     return 0;
