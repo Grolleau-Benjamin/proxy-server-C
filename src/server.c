@@ -264,6 +264,8 @@ int handle_http(connection_t* conn) {
         if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
             ERROR("Invalid IP address");
             Log(LOG_LEVEL_ERROR, "Invalid IP address");
+            free(ip);
+            free(port);
             return 1;
         }
 
@@ -273,6 +275,8 @@ int handle_http(connection_t* conn) {
             ERROR("server socket creation failed");
             Log(LOG_LEVEL_ERROR, "server socket creation failed");
             write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
+            free(ip);
+            free(port);
             return 3;
         }
 
@@ -281,11 +285,15 @@ int handle_http(connection_t* conn) {
             Log(LOG_LEVEL_ERROR, "Failed to connect to %s", ip);
             write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
             close(sockfd);
+            free(ip);
+            free(port);
             return 4;
         }
 
         INFO("Connected to %s on port %s\n", ip, port);
         Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
+        free(ip);
+        free(port);
     } else {
         // Else: DNS resolution and connection
         char ipstr[INET6_ADDRSTRLEN];

@@ -50,6 +50,9 @@ void test_invalid_ip_port(const char* input) {
 
     INFO("\tsuccess: Invalid IP:port correctly identified\n");
     INFO("\tTest passed for invalid IP:port \"%s\"\n", input);
+
+    free(ip);
+    free(port);
 }
 
 void test_multiple_valid_cases() {
