@@ -29,6 +29,7 @@ int init_listen_socket(const char* address, int port, int max_client) {
   listen_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (listen_fd < 0) {
       ERROR("ERROR while creating socket\n");
+      Log(LOG_LEVEL_ERROR, "ERROR while creating socket");
       return -1;
   }
   INFO("Socket created (fd: %d)\n", listen_fd);
@@ -39,7 +40,8 @@ int init_listen_socket(const char* address, int port, int max_client) {
   inet_aton(address, &server_addr.sin_addr);
   ret = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
   if (ret < 0) {
-      perror("bind");
+      ERROR("ERROR when binding the listen fd");
+      Log(LOG_LEVEL_ERROR, "ERROR when binding the listen fd");
       return -1;
   }
   INFO("Server is bind on %s:%d\n", address, port);
@@ -47,7 +49,8 @@ int init_listen_socket(const char* address, int port, int max_client) {
 
   ret = listen(listen_fd, max_client);
   if (ret < 0) {
-      perror("listen");
+      ERROR("ERROR when listen function");
+      Log(LOG_LEVEL_ERROR, "ERROR when listen function");
       return -1;
   }
   INFO("Server is now listening...\n");
@@ -66,7 +69,8 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* clie
     
     int new_client_fd = accept(listen_fd, (struct sockaddr*)client_addr, &addr_len);
     if (new_client_fd < 0) {
-        print_error(new_client_fd, "accept");
+        ERROR("ERROR when accept client");
+        Log(LOG_LEVEL_ERROR, "ERROR when accept client");
         return -1;
     }
 
@@ -89,7 +93,8 @@ int handle_connection(connection_t* conn) {
     ssize_t bytes_read = read(conn->client_fd, conn->client_buffer + total_bytes_read, sizeof(conn->client_buffer) - total_bytes_read);
 
     if (bytes_read < 0) {
-      print_error(bytes_read, "read");
+      ERROR("ERROR when reading client request");
+      Log(LOG_LEVEL_ERROR, "ERROR when reading client request");
       return 1;
     }
 
@@ -101,11 +106,6 @@ int handle_connection(connection_t* conn) {
 
     total_bytes_read += bytes_read;
     conn->client_buffer_len = total_bytes_read;
-    if (conn->client_buffer_len < sizeof(conn->client_buffer)) {
-      conn->client_buffer[conn->client_buffer_len] = '\0';
-    } else {
-      conn->client_buffer[sizeof(conn->client_buffer) - 1] = '\0';
-    }
     
     if (is_http_method(conn->client_buffer) && is_http_request_complete(conn->client_buffer)) {
       int ret = handle_http(conn);
@@ -143,18 +143,15 @@ int handle_http(connection_t* conn) {
     }
 
     Log(LOG_LEVEL_INFO, "%s asked for %s", conn->client_ip, host);
-
     INFO("Checking if host '%s's is allowed ...\n", host);
-    Log(LOG_LEVEL_INFO, "Checking if the host %s is allowed", host);
 
     if (is_host_deny(host)) {
-        Log(LOG_LEVEL_WARN, "The host %s is denied", host);
         WARN("%s is deny by the bocklist, Sending HTTP 403 Forbiden\n", host);
         write_on_socket_http_from_buffer(conn->client_fd, HTTP_403_RESPONSE, sizeof(HTTP_403_RESPONSE));
         return 1;
     };
 
-    Log(LOG_LEVEL_INFO, "The host %s is allowed", host);
+    INFO("The host %s is allowed\n", host);
     char* ip = NULL;
     char* port = NULL;
     int sockfd = -1;
@@ -193,8 +190,8 @@ int handle_http(connection_t* conn) {
     }
 
     if (is_host_https_format(host)) {
-        WARN("https format for %s\n", host);
-        WARN("Sending a 404 not found\n");
+        WARN("client %s ask https format for %s\n, Sending a 404 not found", conn->client_ip, host);
+        Log(LOG_LEVEL_WARN, "Client %s ask HTTPS format, Sending 404 not found", conn->client_ip);
         write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
         return 1;
     }
@@ -210,6 +207,7 @@ int handle_http(connection_t* conn) {
 
         if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
             ERROR("Invalid IP address");
+            Log(LOG_LEVEL_ERROR, "Invalid IP address");
             return 1;
         }
 
@@ -217,22 +215,21 @@ int handle_http(connection_t* conn) {
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd == -1) {
             ERROR("server socket creation failed");
+            Log(LOG_LEVEL_ERROR, "server socket creation failed");
+            write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
             return 3;
         }
 
         if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
             ERROR("Failed to connect");
+            Log(LOG_LEVEL_ERROR, "Failed to connect to %s", ip);
+            write_on_socket_http_from_buffer(conn->client_fd, HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE));
             close(sockfd);
             return 4;
         }
 
         INFO("Connected to %s on port %s\n", ip, port);
         Log(LOG_LEVEL_INFO, "Connected to %s on port %s", ip, port);
-
-        strncpy(conn->server_ip, ip, sizeof(conn->server_ip) - 1);
-        conn->server_ip[sizeof(conn->server_ip) - 1] = '\0';
-        free(ip);
-        free(port);
     } else {
         // Else: DNS resolution and connection
         char ipstr[INET6_ADDRSTRLEN];
@@ -258,9 +255,6 @@ int handle_http(connection_t* conn) {
 
         INFO("Connected to %s on port 80\n", ipstr);
         Log(LOG_LEVEL_INFO, "Connected to %s on port 80\n", ipstr);
-
-        strncpy(conn->server_ip, ipstr, sizeof(conn->server_ip) - 1);
-        conn->server_ip[sizeof(conn->server_ip) - 1] = '\0';
     }
 
     // Writing the client's buffer on socker

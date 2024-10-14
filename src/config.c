@@ -21,6 +21,7 @@
  */
 
 #include "../includes/config.h"
+#include "../includes/logger.h"
 #include <string.h>
 
 config_t config = {
@@ -46,7 +47,8 @@ int init_config(const char* filename){
 
   FILE* file = fopen(filename, "r");
   if (!file) {
-    print_error(-1, "Config file not found");
+    ERROR("Config file not found");
+    Log(LOG_LEVEL_ERROR, "Config file not found");
     return -1;
   }
 
@@ -74,9 +76,11 @@ int init_config(const char* filename){
         strncpy(config.rules_filename, value, sizeof(config.rules_filename));
       } else {
         WARN("Unknow parameter '%s' at line %d\n", key, i);
+        Log(LOG_LEVEL_WARN, "Unknow parameter '%s' at line %d\n", key, i);
       }
     } else {
       WARN("Unvalid line in file configuration: %s\n", line);
+      Log(LOG_LEVEL_WARN, "Unvalid line in file configuration: %s\n", line);
     }
 
     i++;

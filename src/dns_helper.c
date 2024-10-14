@@ -20,6 +20,7 @@
 
 #include "../includes/dns_helper.h"
 #include "../includes/utils.h"
+#include "../includes/logger.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -117,6 +118,7 @@ int add_in_cache(const char* host, const char* ipstr, struct addrinfo* addr_info
     dns_cache_entry_t *new_entry = malloc(sizeof(dns_cache_entry_t));
     if (!new_entry) {
         ERROR("Failed to allocate memory for DNS cache entry.\n");
+        Log(LOG_LEVEL_ERROR, "Failed to allocate memory for DNS cache entry");
         return -1;
     }
 
@@ -222,7 +224,7 @@ int resolve_dns(const char* host, struct addrinfo** res, char* ipstr) {
     hints.ai_socktype = SOCK_STREAM;
 
     if ((status = getaddrinfo(host, "80", &hints, res)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        ERROR("getaddrinfo: %s\n", gai_strerror(status));
         return 2;
     }
 
@@ -230,7 +232,7 @@ int resolve_dns(const char* host, struct addrinfo** res, char* ipstr) {
     void* addr = &(ipv4->sin_addr);
 
     if (inet_ntop((*res)->ai_family, addr, ipstr, INET6_ADDRSTRLEN) == NULL) {
-        perror("inet_ntop");
+        ERROR("inet_ntop");
         freeaddrinfo(*res);
         return 3;
     }
@@ -239,6 +241,7 @@ int resolve_dns(const char* host, struct addrinfo** res, char* ipstr) {
 
     if (add_in_cache(host, ipstr, *res) != 0) {
         ERROR("Failed to add DNS resolution to cache.\n");
+        Log(LOG_LEVEL_ERROR, "DNS cache failled to add DNS resolution");
     }
 
     return 0;

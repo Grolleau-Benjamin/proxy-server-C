@@ -1,5 +1,6 @@
 #include "../includes/server_helper.h"
 #include "../includes/utils.h"
+#include "../includes/logger.h"
 
 #include <regex.h>
 #include <stdlib.h>
@@ -29,14 +30,12 @@ int init_regex() {
   int ret = regcomp(&ip_port_regex, ip_port_pattern, REG_EXTENDED); 
   if (ret != 0) {
     ERROR("Echec during the compilation of the IP:Port regex\n");
-    print_error(ret, "regex");
     return 1;
   }
 
   ret = regcomp(&https_regex, https_pattern, REG_EXTENDED); 
   if (ret != 0) {
     ERROR("Echec during the compilation of the HTTPS regex\n");
-    print_error(ret, "regex");
     return 1;
   }
 
@@ -58,7 +57,6 @@ int is_ip_port_format(const char *host, char **ip, char **port) {
 
   if (!regex_compiled) {
     ERROR("Regex is not compiled. Call init_regex() before.\n");
-    print_error(-1, "regex_not_compiled");
     return 0;
   }
 
@@ -76,7 +74,6 @@ int is_ip_port_format(const char *host, char **ip, char **port) {
 int is_host_https_format(const char* host) {
   if (!regex_compiled) {
     ERROR("Regex is not compiled. Call init_regex() before.\n");
-    print_error(-1, "regex_not_compiled");
     return 0;
   }
 
@@ -109,7 +106,8 @@ int write_on_socket_http_from_buffer(int fd, char* buffer, int buffer_len) {
         int temp_send = write(fd, buffer + total_sent, buffer_len - total_sent);
         INFO("write %d bytes\n", temp_send);
         if (temp_send == -1) {
-            perror("write on server socket");
+            ERROR("write on server socket");
+            Log(LOG_LEVEL_ERROR, "Error while writing on server socket");
             return 1;
         }
         total_sent += temp_send;
