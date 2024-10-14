@@ -134,7 +134,7 @@ int main() {
           continue;
         }
       } else {
-        perror("poll");
+        ERROR("poll\n");
         break; // Handle other errors appropriately
       }
     }
@@ -214,8 +214,8 @@ int main() {
         if (close_conn) {
           WARN("Clossing connections for %d\n", connections[nfds]->client_fd);
           Log(LOG_LEVEL_WARN, "Closing connections for %d", connections[nfds]->client_fd);
-          close(connections[nfds]->client_fd);
-          close(connections[nfds]->server_fd);
+          if (connections[nfds]->client_fd != -1) close(connections[nfds]->client_fd);
+          if (connections[nfds]->server_fd != -1) close(connections[nfds]->server_fd);
           fds[nfds].fd = -1;
           fds[nfds].revents = 0;
           free(connections[nfds]);
