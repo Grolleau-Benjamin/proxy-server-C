@@ -25,6 +25,7 @@
 #include "../includes/http_helper.h"
 #include "../includes/dns_helper.h"
 #include "../includes/rules.h"
+#include <netdb.h>
 #include <stdio.h>
 
 /**
@@ -319,6 +320,7 @@ int handle_http(connection_t* conn) {
 
         INFO("Connected to %s on port 80\n", ipstr);
         Log(LOG_LEVEL_INFO, "Connected to %s on port 80\n", ipstr);
+        freeaddrinfo(res);
     }
 
     // Writing the client's buffer on socker
