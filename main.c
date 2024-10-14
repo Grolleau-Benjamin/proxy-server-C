@@ -156,7 +156,7 @@ int main() {
       if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)){
         if (i != 0) { // not the listening socket
           ERROR("Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error\n", fds[i].fd);
-          Log(LOG_LEVEL_ERROR, "Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error", fds[i].fd);
+          Log(LOG_LEVEL_ERROR, "[SERVER] Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error", fds[i].fd);
           close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) {
@@ -164,7 +164,7 @@ int main() {
               if (fds[i].fd == connections[i]->client_fd) {
                 INFO("Error on client\n");
                 INFO("Socket server fd: %d\n", connections[i]->server_fd);
-                Log(LOG_LEVEL_ERROR, "Error on client, socker server fd: %d", connections[i]->server_fd);
+                Log(LOG_LEVEL_ERROR, "[SERVER] Error on client, socker server fd: %d", connections[i]->server_fd);
               }
               connections[i]->client_fd = -1;
             }
@@ -174,7 +174,7 @@ int main() {
               if (fds[i].fd == connections[i]->server_fd) {
                 INFO("Error on server\n");
                 INFO("Socket client fd: %d\n", connections[i]->client_fd);
-                Log(LOG_LEVEL_ERROR, "Error on server, socker client fd: %d", connections[i]->client_fd);
+                Log(LOG_LEVEL_ERROR, "[SERVER] Error on server, socker client fd: %d", connections[i]->client_fd);
               }
               connections[i]->server_fd = -1;
             }
@@ -190,7 +190,7 @@ int main() {
       if (fds[i].fd == listen_fd && (fds[i].revents & POLLIN) == POLLIN) {
         char client_ip[INET_ADDRSTRLEN];
         int new_client_fd = accept_connection(listen_fd, &client_addr, client_ip, config.max_client * 2, nfds);
-        Log(LOG_LEVEL_INFO, "New client connected on socket %d", new_client_fd);
+        Log(LOG_LEVEL_INFO, "[SERVER] New client connected on socket %d", new_client_fd);
         
         fds[nfds].fd = new_client_fd;
         fds[nfds].events = POLLIN;
@@ -215,7 +215,7 @@ int main() {
 
         if (close_conn) {
           WARN("Clossing connections for %d\n", connections[nfds]->client_fd);
-          Log(LOG_LEVEL_WARN, "Closing connections for %d", connections[nfds]->client_fd);
+          Log(LOG_LEVEL_WARN, "[SERVER] Closing connections for %d", connections[nfds]->client_fd);
           if (connections[nfds]->client_fd != -1) close(connections[nfds]->client_fd);
           if (connections[nfds]->server_fd != -1) close(connections[nfds]->server_fd);
           fds[nfds].fd = -1;
@@ -246,7 +246,7 @@ int main() {
           ssize_t bytes = read(conn->client_fd, conn->client_buffer, sizeof(conn->client_buffer));
           if (bytes <= 0) {
             INFO("Closing connection on client (%d), no more bits to read\n", conn->client_fd);
-            Log(LOG_LEVEL_INFO, "Closing connection on client (%d), no more bits to read", conn->client_fd);
+            Log(LOG_LEVEL_INFO, "[SERVER] Closing connection on client (%d), no more bits to read", conn->client_fd);
             close(conn->client_fd);
             close(conn->server_fd);
             fds[i].fd = -1;
@@ -275,7 +275,7 @@ int main() {
           ssize_t bytes = read(conn->server_fd, conn->server_buffer, sizeof(conn->server_buffer));
           if (bytes <= 0) {
               INFO("Closing connection on server (%d), no more bits to read\n", conn->server_fd);
-              Log(LOG_LEVEL_INFO, "Closing connection on server (%d), no more bits to read", conn->server_fd);
+              Log(LOG_LEVEL_INFO, "[SERVER] Closing connection on server (%d), no more bits to read", conn->server_fd);
               close(conn->client_fd);
               close(conn->server_fd);
               fds[i].fd = -1;
