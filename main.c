@@ -13,6 +13,16 @@
  * See the LICENSE file for the full license text.
  */
 
+/*
+ * @file main.c
+ * @brief Main entry point for the HTTP proxy server.
+ *
+ * This file contains the main function that initializes the server, handles incoming client connections,
+ * and processes requests through polling. It also manages the lifecycle of the server, including setting
+ * up configuration, logger, rules, and regular expressions. The server listens for client requests, forwards
+ * them to the appropriate destination, and closes connections when necessary.
+ */
+
 #include "includes/config.h"
 #include "includes/utils.h"
 #include "includes/server.h"

@@ -1,3 +1,12 @@
+/**
+ * @file server_helper.h
+ * @brief Header file for helper functions used in server operations.
+ *
+ * This header file declares functions for handling regular expressions,
+ * manipulating host strings, and performing read/write operations on sockets in the context
+ * of an HTTP server. These functions assist in processing IP:Port formats, handling HTTPS
+ * requests, and managing socket communication.
+ */
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
 

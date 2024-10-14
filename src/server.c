@@ -12,6 +12,11 @@
  * See the LICENSE file for the full license text.
  */
 
+ /**
+ * @file server.c
+ * @brief This file contains the core server-side functions to handle network communication,
+ * including socket initialization, connection acceptance, and HTTP request processing.
+ */
 
 #include "../includes/server.h"
 #include "../includes/utils.h"
@@ -22,6 +27,17 @@
 #include "../includes/rules.h"
 #include <stdio.h>
 
+/**
+ * @brief Initializes a listening socket.
+ * 
+ * This function creates a socket, binds it to the specified address and port, and starts listening for incoming connections.
+ * 
+ * @param address The IP address to bind the socket.
+ * @param port The port number to bind the socket.
+ * @param max_client The maximum number of clients the server can handle simultaneously.
+ * 
+ * @return The file descriptor of the listening socket, or -1 in case of an error.
+ */
 int init_listen_socket(const char* address, int port, int max_client) {
   int listen_fd, ret;
   struct sockaddr_in server_addr;
@@ -56,6 +72,19 @@ int init_listen_socket(const char* address, int port, int max_client) {
   return listen_fd;
 }
 
+/**
+ * @brief Accepts a new incoming client connection.
+ * 
+ * This function accepts a connection from a client, logs the client's IP address, and returns the new client socket file descriptor.
+ * 
+ * @param listen_fd The file descriptor of the listening socket.
+ * @param client_addr A pointer to a sockaddr_in structure to store the client's address information.
+ * @param client_ip A buffer to store the client's IP address as a string.
+ * @param max_client The maximum number of clients allowed.
+ * @param nb_client The current number of connected clients.
+ * 
+ * @return The file descriptor of the new client socket, or -1 in case of an error.
+ */
 int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* client_ip, int max_client, int nb_client) {
     socklen_t addr_len = sizeof(struct sockaddr_in);
     
@@ -79,6 +108,17 @@ int accept_connection(int listen_fd, struct sockaddr_in* client_addr, char* clie
     return new_client_fd;
 }
 
+/**
+ * @brief Handles communication with a connected client.
+ * 
+ * This function manages the entire lifecycle of a client connection, reading the client's data, 
+ * processing HTTP requests, and checking the validity of the request. It handles different protocols, 
+ * and logs relevant connection events.
+ * 
+ * @param conn A pointer to a connection_t structure representing the client connection.
+ * 
+ * @return 0 on success, or 1 in case of an error.
+ */
 int handle_connection(connection_t* conn) {
   INFO("Handling connection...\n");
 
@@ -101,7 +141,7 @@ int handle_connection(connection_t* conn) {
 
     total_bytes_read += bytes_read;
     conn->client_buffer_len = total_bytes_read;
-    if (conn->client_buffer_len < sizeof(conn->client_buffer)) {
+    if (conn->client_buffer_len < (ssize_t)sizeof(conn->client_buffer)) {
       conn->client_buffer[conn->client_buffer_len] = '\0';
     } else {
       conn->client_buffer[sizeof(conn->client_buffer) - 1] = '\0';
@@ -130,6 +170,17 @@ int handle_connection(connection_t* conn) {
   return 0;
 }
 
+/**
+ * @brief Processes an HTTP request from a client.
+ * 
+ * This function handles the logic for processing an HTTP request, including retrieving the host, checking 
+ * if the host is allowed, resolving DNS if necessary, and connecting to the remote host. It also handles 
+ * specific cases, such as requests to localhost or HTTPS format requests, and sends appropriate responses (e.g., 404, 403).
+ * 
+ * @param conn A pointer to a connection_t structure representing the client connection.
+ * 
+ * @return 0 on success, or 1 in case of an error.
+ */
 int handle_http(connection_t* conn) {
     INFO("Handle HTTP function\n");
     
