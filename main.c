@@ -110,7 +110,7 @@ int main() {
   Log(LOG_LEVEL_INFO, "Socket open on fd %d", listen_fd);
 
   struct pollfd fds[config.max_client * 2 + 1];
-  connection_t *connections[config.max_client * 2];
+  connection_t *connections[config.max_client * 2 + 1];
   memset(fds, 0, sizeof(fds));
   memset(connections, 0, sizeof(connections));
   fds[0].fd = listen_fd;
@@ -326,7 +326,7 @@ int main() {
 
   INFO("Closing all connections and cleaning up...\n");
   // Close all client and server connections
-  for (int i = 0; i < config.max_client * 2; i += 2) {
+  for (int i = 1; i < config.max_client * 2 + 1 ; i += 2) {
       if (connections[i] != NULL) {
         if (connections[i]->client_fd != -1) {
           close(connections[i]->client_fd);
