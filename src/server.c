@@ -322,7 +322,7 @@ int handle_http(connection_t* conn) {
         }
 
         INFO("Connected to %s on port 80\n", ipstr);
-        Log(LOG_LEVEL_INFO, "[SERVER] Connected to %s on port 80\n", ipstr);
+        Log(LOG_LEVEL_INFO, "[SERVER] Connected to %s on port 80", ipstr);
         freeaddrinfo(res);
     }
 
