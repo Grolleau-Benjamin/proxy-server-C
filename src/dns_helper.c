@@ -45,6 +45,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
         *current = malloc(sizeof(struct addrinfo));
         if (*current == NULL) {
             freeaddrinfo(head);
+            freeaddrinfo(*current);
             return NULL;
         }
 
@@ -55,6 +56,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
             (*current)->ai_addr = malloc(src->ai_addrlen);
             if ((*current)->ai_addr == NULL) {
                 freeaddrinfo(head);
+                freeaddrinfo(*current);
                 return NULL;
             }
             memcpy((*current)->ai_addr, src->ai_addr, src->ai_addrlen);
@@ -65,6 +67,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
             (*current)->ai_canonname = strdup(src->ai_canonname);
             if ((*current)->ai_canonname == NULL) {
                 freeaddrinfo(head);
+                freeaddrinfo(*current);
                 return NULL;
             }
         }
