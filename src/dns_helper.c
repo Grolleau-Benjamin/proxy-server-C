@@ -68,11 +68,10 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
                 return NULL;
             }
         }
-
         src = src->ai_next;
         current = &((*current)->ai_next);
     }
-
+    free(*current);
     *current = NULL;
     return head;
 }

@@ -178,7 +178,7 @@ int main() {
               }
               connections[i]->server_fd = -1;
             }
-            // free(connections[i]);
+            free(connections[i]);
           }
           fds[i].fd = -1;
           fds[i].revents = 0;
