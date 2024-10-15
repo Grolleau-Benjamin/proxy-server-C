@@ -12,5 +12,5 @@ BAN_DOMAIN scamsite2.com
 
 [others]
 BAN_DOMAIN darkwebsite.com
-BAN DOMAIN iamjmm.ovh
+# BAN DOMAIN iamjmm.ovh
 BAN_WORD darkweb
