@@ -157,7 +157,7 @@ int main() {
         if (i != 0) { // not the listening socket
           ERROR("Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error\n", fds[i].fd);
           Log(LOG_LEVEL_ERROR, "[SERVER] Error (POLLERR | POLLHUP | POLLNVAL) on socket %d, closing the connection, error", fds[i].fd);
-          close(fds[i].fd);
+          //close(fds[i].fd);
           if (connections[i]) {
             if (connections[i]->client_fd != -1) {
               close(connections[i]->client_fd);
@@ -178,10 +178,30 @@ int main() {
               }
               connections[i]->server_fd = -1;
             }
-            free(connections[i]);
+            WARN("[WHICH FREE] connection[%d] at %p \n", i, connections[i]);
+            // free(connections[i]);
           }
-          fds[i].fd = -1;
-          fds[i].revents = 0;
+          // if (fds[i].fd == connections[i]->client_fd) {
+          if ( i%2 == 0 ) {
+            fds[i].fd = -1;
+            fds[i].revents = 0;
+            fds[i-1].fd = -1;
+            fds[i-1].revents = 0;
+          } else {
+            fds[i].fd = -1;
+            fds[i].revents = 0;
+            fds[i+1].fd = -1;
+            fds[i+1].revents = 0;
+          }
+          //   fds[i+1].fd = 1;
+          //   fds[i+1].revents =0;
+          // } else {
+          //   fds[i].fd = -1;
+          //   fds[i].revents = 0;
+          //   fds[i-1].fd = 1;
+          //   fds[i-1].revents =0;
+          // }
+
         }
         continue;
       }
@@ -254,7 +274,7 @@ int main() {
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
             free(connections[i]);
-            INFO("Connection close\n");
+            INFO("Connection closed\n");
             continue;
           }
           if (write(conn->server_fd, conn->client_buffer, bytes) < 0) {
@@ -298,9 +318,9 @@ int main() {
             fds[i-1].revents = 0;
             free(connections[i]);
             continue;
-          } else {
-            INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
-          }
+          } //else {
+            // INFO("Write %d bytes to client %d from %d\n", ret, conn->client_fd, conn->server_fd);
+          //}
         }
       }
     }
@@ -320,7 +340,6 @@ int main() {
     }
     nfds = new_nfds;
   }
-
   // Close all client and server connections
   for (int i = 1; i < config.max_client * 2 + 1 ; i += 2) {
       if (connections[i] != NULL) {
@@ -332,17 +351,22 @@ int main() {
           close(connections[i]->server_fd);
           connections[i]->server_fd = -1;
         }
-        free(connections[i]);
+        if (fds[i].fd != -1) free(connections[i]);
         connections[i] = NULL;
         connections[i+1] = NULL;
       }
   }
-
+  INFO("Free of connections OK\n");
   close(listen_fd);
+  INFO("close listen fd OK\n");
   close_logger();
+  INFO("close logger OK\n");
   free_rules();
+  INFO("Free of rules OK\n");
   free_regex();
+  INFO("Free of regex OK\n");
   free_dns_cache();
+  INFO("Free of dns cache OK\n");
   INFO("Shutdown complete.\n");
   return EXIT_SUCCESS;
 }

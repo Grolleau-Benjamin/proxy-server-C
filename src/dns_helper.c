@@ -40,10 +40,11 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
 
     struct addrinfo *head = NULL;
     struct addrinfo **current = &head;
-
+    if (src == NULL) Log(LOG_LEVEL_ERROR, "ERROR SRC == NULL DNS HELPER !");
     while (src != NULL) {
         *current = malloc(sizeof(struct addrinfo));
         if (*current == NULL) {
+            ERROR("Current NULL\n");
             freeaddrinfo(head);
             freeaddrinfo(*current);
             return NULL;
@@ -55,6 +56,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
         if (src->ai_addr != NULL) {
             (*current)->ai_addr = malloc(src->ai_addrlen);
             if ((*current)->ai_addr == NULL) {
+                ERROR("(*Current)->ai_addr NULL\n");
                 freeaddrinfo(head);
                 freeaddrinfo(*current);
                 return NULL;
@@ -66,6 +68,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
         if (src->ai_canonname != NULL) {
             (*current)->ai_canonname = strdup(src->ai_canonname);
             if ((*current)->ai_canonname == NULL) {
+                ERROR("(*Current)->ai_canonname NULL\n");
                 freeaddrinfo(head);
                 freeaddrinfo(*current);
                 return NULL;
