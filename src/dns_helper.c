@@ -71,7 +71,7 @@ struct addrinfo *copy_addrinfo(const struct addrinfo *src) {
         src = src->ai_next;
         current = &((*current)->ai_next);
     }
-    free(*current);
+    freeaddrinfo(*current);
     *current = NULL;
     return head;
 }
