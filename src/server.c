@@ -64,7 +64,7 @@ int init_listen_socket(const char* address, int port, int max_client) {
       Log(LOG_LEVEL_ERROR, "[SERVER] ERROR when binding the listen fd");
       return -1;
   }
-  INFO("Server is bind on %s:%d\n", address, port);
+  printf("Server is bind on %s:%d\n", address, port);
   Log(LOG_LEVEL_INFO, "[SERVER] Server is bind on %s:%d", address, port);
 
   ret = listen(listen_fd, max_client);

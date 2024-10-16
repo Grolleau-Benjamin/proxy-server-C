@@ -41,7 +41,7 @@
 // volatile because the value can change at any time (https://barrgroup.com/blog/how-use-cs-volatile-keyword)
 volatile int running = 1;
 void handle_signal(int signal) {
-  running = 0;
+  if (signal == 2) running = 0;
 }
 
 int main() {
@@ -244,7 +244,6 @@ int main() {
 
         nfds++; // Next client fd position
       } else {
-        int ret;
         // verify if it's the server or the client or Null
         connection_t *conn = connections[i];
 
@@ -358,5 +357,6 @@ int main() {
   free_dns_cache();
   INFO("Free of dns cache OK\n");
   INFO("Shutdown complete.\n");
+  printf("Server is close!");
   return EXIT_SUCCESS;
 }
