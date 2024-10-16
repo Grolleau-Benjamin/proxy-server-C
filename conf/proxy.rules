@@ -11,6 +11,6 @@ BAN_DOMAIN scamsite1.com
 BAN_DOMAIN scamsite2.com
 
 [others]
-# BAN_DOMAIN iamjmm.ovh
+BAN_DOMAIN iamjmm.ovh
 BAN_DOMAIN darkwebsite.com
 
