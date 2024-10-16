@@ -1,5 +1,8 @@
 # Proxy Server Project in C
 
+## Report
+You can read a complexe report [there](./RE2xx_Réseaux_et_applications_réparties.pdf)
+
 ## Introduction
 
 This project is a simple HTTP proxy server written in C. It intercepts HTTP requests from clients and forwards them to the destination servers. The proxy can filter content based on configurable rules, log requests, and manage configurations dynamically.
