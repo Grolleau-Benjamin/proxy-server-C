@@ -181,7 +181,6 @@ int main() {
             WARN("[WHICH FREE] connection[%d] at %p \n", i, connections[i]);
             // free(connections[i]);
           }
-          // if (fds[i].fd == connections[i]->client_fd) {
           if ( i%2 == 0 ) {
             fds[i].fd = -1;
             fds[i].revents = 0;
@@ -193,15 +192,6 @@ int main() {
             fds[i+1].fd = -1;
             fds[i+1].revents = 0;
           }
-          //   fds[i+1].fd = 1;
-          //   fds[i+1].revents =0;
-          // } else {
-          //   fds[i].fd = -1;
-          //   fds[i].revents = 0;
-          //   fds[i-1].fd = 1;
-          //   fds[i-1].revents =0;
-          // }
-
         }
         continue;
       }
